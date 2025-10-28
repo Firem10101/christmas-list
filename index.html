@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Christmas List</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.farmersalmanac.com%2Fwp-content%2Fuploads%2F2020%2F12%2FChristmas-Day-traditions-as_301005745.jpeg&f=1&nofb=1&ipt=5fec5f3eb60804cbac6eca77e3c7e28cc891b8d7a68c09544289a484bcb9bf56') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+
+    h1, h2 {
+      text-align: center;
+      text-shadow: 2px 2px 4px #000;
+    }
+
+    #list {
+      max-width: 800px;
+      margin: 20px;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 15px;
+    }
+
+    .item {
+      border: 2px solid #fff;
+      border-radius: 10px;
+      padding: 10px;
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      background-color: rgba(255, 0, 0, 0.3);
+      transition: transform 0.2s;
+    }
+
+    .item:hover {
+      transform: scale(1.03);
+      background-color: rgba(0, 128, 0, 0.3);
+    }
+
+    img {
+      max-width: 100px;
+      margin-right: 15px;
+      border-radius: 10px;
+    }
+
+    button {
+      margin-left: auto;
+      padding: 5px 10px;
+      background-color: gold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #ffa500;
+    }
+
+    input {
+      padding: 5px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    h2 {
+      margin-top: 40px;
+    }
+
+    /* Snow effect */
+    #snow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .snowflake {
+      position: absolute;
+      top: -10px;
+      color: white;
+      font-size: 1em;
+      user-select: none;
+      pointer-events: none;
+      animation-name: fall;
+      animation-timing-function: linear;
+    }
+
+    @keyframes fall {
+      to { transform: translateY(100vh); }
+    }
+
+    #admin-login, #admin-section {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(0,0,0,0.7);
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 250px;
+      font-size: 0.9em;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      z-index: 10000;
+    }
+
+    #admin-login input, #admin-section input {
+      width: 100%;
+      font-size: 0.9em;
+      margin: 5px 0;
+    }
+
+    #admin-login button, #admin-section button {
+      width: 100%;
+      font-size: 0.9em;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="snow"></div>
+
+  <h1>My Christmas List</h1>
+
+  <!-- Admin login -->
+  <div id="admin-login">
+    <input type="password" id="admin-password" placeholder="Admin Password">
+    <button onclick="toggleAdmin()">Enter Admin Mode</button>
+  </div>
+
+  <!-- Admin section (hidden by default) -->
+  <div id="admin-section" style="display: none;">
+    <h2>Add New Item</h2>
+    <input type="text" id="item-name" placeholder="Item Name">
+    <input type="text" id="item-price" placeholder="Price">
+    <input type="file" id="item-image">
+    <button onclick="addItem()">Add Item</button>
+    <button id="exit-admin-btn" onclick="exitAdmin()">Exit Admin Mode</button>
+  </div>
+
+  <!-- Public list -->
+  <div id="list"></div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyARtsrEkiRqyxEv6KfdC48TJt1RCcZZ_Kg",
+      authDomain: "christmas-list-9a41e.firebaseapp.com",
+      databaseURL: "https://christmas-list-9a41e-default-rtdb.firebaseio.com",
+      projectId: "christmas-list-9a41e",
+      storageBucket: "christmas-list-9a41e.appspot.com",
+      messagingSenderId: "590904557299",
+      appId: "1:590904557299:web:d6989710fe9049637fc186"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let isAdmin = false;
+
+    // Reference to "items" node in database
+    const itemsRef = db.ref('items');
+
+    // Listen for changes in Firebase in real time
+    itemsRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
+      renderList(items);
+    });
+
+    function renderList(items) {
+      const listDiv = document.getElementById('list');
+      listDiv.innerHTML = '';
+
+      items.forEach((item) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'item';
+
+        const img = document.createElement('img');
+        img.src = item.image || '';
+        itemDiv.appendChild(img);
+
+        const text = document.createElement('div');
+        text.innerHTML = `<strong>${item.name}</strong><br>$${item.price}`;
+        itemDiv.appendChild(text);
+
+        const button = document.createElement('button');
+        button.textContent = 'Claim';
+        button.onclick = () => {
+          db.ref('items/' + item.key).remove(); // remove item from Firebase
+        };
+        itemDiv.appendChild(button);
+
+        listDiv.appendChild(itemDiv);
+      });
+    }
+
+    function addItem() {
+      if (!isAdmin) return alert("Only admin can add items!");
+      const name = document.getElementById('item-name').value;
+      const price = document.getElementById('item-price').value;
+      const imageInput = document.getElementById('item-image');
+
+      if (!name || !price) return alert('Please enter name and price');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const newItem = { name, price, image: e.target.result };
+        itemsRef.push(newItem); // add item to Firebase
+      };
+
+      if (imageInput.files[0]) {
+        reader.readAsDataURL(imageInput.files[0]);
+      } else {
+        const newItem = { name, price, image: '' };
+        itemsRef.push(newItem);
+      }
+
+      document.getElementById('item-name').value = '';
+      document.getElementById('item-price').value = '';
+      imageInput.value = '';
+    }
+
+function toggleAdmin() {
+  const passwordInput = document.getElementById('admin-password');
+  const adminButton = document.querySelector('#admin-login button'); // the Enter Admin Mode button
+  const password = passwordInput.value;
+
+  if (password === '0825') {
+    isAdmin = true;
+    if (password === '0825') {
+        window.location.href = 'admin.html'; // redirect to the admin page
+}
+
+  } else {
+    // Change button color to red and text to "Wrong password"
+    const originalColor = adminButton.style.backgroundColor;
+    const originalText = adminButton.textContent;
+
+    adminButton.style.backgroundColor = 'red';
+    adminButton.textContent = 'Wrong password';
+
+    // Reset after 0.5 seconds
+    setTimeout(() => {
+      adminButton.style.backgroundColor = originalColor || 'gold';
+      adminButton.textContent = originalText;
+    }, 500);
+  }
+}
+
+
+
+    // Snow animation
+    function createSnowflake() {
+      const snowflake = document.createElement('div');
+      snowflake.className = 'snowflake';
+      snowflake.style.left = Math.random() * window.innerWidth + 'px';
+      snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+      snowflake.style.opacity = Math.random();
+      snowflake.style.animationDuration = (Math.random() * 5 + 5) + 's';
+      snowflake.textContent = '❄';
+      document.getElementById('snow').appendChild(snowflake);
+
+      setTimeout(() => {
+        snowflake.remove();
+      }, 10000);
+    }
+
+function exitAdmin() {
+  isAdmin = false;
+  document.getElementById('admin-section').style.display = 'none';
+  document.getElementById('admin-login').style.display = 'block';
+}
+
+    setInterval(createSnowflake, 200);
+  </script>
+</body>
+</html>

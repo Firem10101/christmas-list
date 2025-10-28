@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Christmas List Admin</title>
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background: url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.farmersalmanac.com%2Fwp-content%2Fuploads%2F2020%2F12%2FChristmas-Day-traditions-as_301005745.jpeg&f=1&nofb=1&ipt=5fec5f3eb60804cbac6eca77e3c7e28cc891b8d7a68c09544289a484bcb9bf56') no-repeat center center fixed;
+    background-size: cover;
+    color: #fff;
+  }
+
+  h1 {
+    text-align: center;
+    text-shadow: 2px 2px 4px #000;
+    margin-top: 20px;
+  }
+
+  #list {
+    max-width: 800px;
+    margin: 20px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+  }
+
+  img {
+    max-width: 100px;
+    margin-right: 5px;
+    border-radius: 5px;
+  }
+
+  .item {
+    border: 2px solid #fff;
+    border-radius: 10px;
+    padding: 5px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgba(255, 0, 0, 0.3);
+    transition: transform 0.2s;
+  }
+
+  .item:hover {
+    transform: scale(1.03);
+    background-color: rgba(0, 128, 0, 0.3);
+  }
+
+  button {
+    padding: 5px 10px;
+    background-color: gold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    margin-left: 5px;
+  }
+
+  button:hover {
+    background-color: #ffa500;
+  }
+
+  input {
+    padding: 5px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    width: 100%;
+  }
+
+  /* Side panel for admin actions */
+  #admin-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: -5px 0 10px rgba(0,0,0,0.5);
+  }
+
+</style>
+</head>
+<body>
+
+<h1>Admin Panel - Manage Christmas List</h1>
+
+<div id="list"></div>
+
+<div id="admin-panel">
+  <h2>Add New Item</h2>
+  <input type="text" id="item-name" placeholder="Item Name">
+  <input type="text" id="item-price" placeholder="Price">
+  <input type="file" id="item-image">
+  <button id="add-btn" onclick="addItem()">Add Item</button>
+  <button id="update-btn" style="display:none;" onclick="updateItem()">Update Item</button>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyARtsrEkiRqyxEv6KfdC48TJt1RCcZZ_Kg",
+    authDomain: "christmas-list-9a41e.firebaseapp.com",
+    databaseURL: "https://christmas-list-9a41e-default-rtdb.firebaseio.com",
+    projectId: "christmas-list-9a41e",
+    storageBucket: "christmas-list-9a41e.appspot.com",
+    messagingSenderId: "590904557299",
+    appId: "1:590904557299:web:d6989710fe9049637fc186"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const itemsRef = db.ref('items');
+
+  itemsRef.on('value', snapshot => {
+    const data = snapshot.val();
+    const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
+    renderList(items);
+  });
+
+  function renderList(items) {
+  const listDiv = document.getElementById('list');
+  listDiv.innerHTML = '';
+
+  items.forEach(item => {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'item';
+    
+    // 1️⃣ Image first
+    if (item.image) {
+      const img = document.createElement('img');
+      img.src = item.image;
+      itemDiv.appendChild(img);
+    }
+
+    // 2️⃣ Name and price next
+    const textDiv = document.createElement('div');
+    textDiv.innerHTML = `<strong>${item.name}</strong><br>$${item.price}`;
+    itemDiv.appendChild(textDiv);
+
+    // 3️⃣ Buttons last
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.style.display = 'flex';
+    buttonsDiv.style.gap = '5px'; // puts the buttons close together
+
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = 'Remove';
+    removeBtn.onclick = () => {
+      itemsRef.child(item.key).remove();
+    };
+    buttonsDiv.appendChild(removeBtn);
+
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = () => editItem(item.key, item.name, item.price, item.image);
+    buttonsDiv.appendChild(editBtn);
+
+    itemDiv.appendChild(buttonsDiv);
+
+    listDiv.appendChild(itemDiv);
+  });
+}
+
+
+  function addItem() {
+    const name = document.getElementById('item-name').value;
+    const price = document.getElementById('item-price').value;
+    const imageInput = document.getElementById('item-image');
+
+    if (!name || !price) return alert('Please enter name and price');
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const newItem = { name, price, image: e.target.result };
+      itemsRef.push(newItem);
+    };
+
+    if (imageInput.files[0]) {
+      reader.readAsDataURL(imageInput.files[0]);
+    } else {
+      itemsRef.push({ name, price, image: '' });
+    }
+
+    document.getElementById('item-name').value = '';
+    document.getElementById('item-price').value = '';
+    imageInput.value = '';
+  }
+
+  function editItem(key, currentName, currentPrice, currentImage) {
+  editingKey = key; // remember which item we're editing
+
+  // Pre-fill the panel inputs
+  document.getElementById('item-name').value = currentName;
+  document.getElementById('item-price').value = currentPrice;
+
+  // Optional: can't prefill file input due to browser restrictions
+  // Just leave it blank; user can choose a new image if they want
+
+  // Hide "Add" button, show "Update" button
+  document.getElementById('add-btn').style.display = 'none';
+  document.getElementById('update-btn').style.display = 'block';
+}
+
+function updateItem() {
+  if (!editingKey) return;
+
+  const name = document.getElementById('item-name').value;
+  const price = document.getElementById('item-price').value;
+  const imageInput = document.getElementById('item-image');
+
+  if (!name || !price) return alert('Please enter name and price');
+
+  const updatedItem = { name, price, image: '' };
+
+  if (imageInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      updatedItem.image = e.target.result;
+      itemsRef.child(editingKey).set(updatedItem);
+      resetAdminPanel();
+    };
+    reader.readAsDataURL(imageInput.files[0]);
+  } else {
+    // If no new image selected, keep the old one
+    itemsRef.child(editingKey).once('value', snapshot => {
+      const oldItem = snapshot.val();
+      updatedItem.image = oldItem.image;
+      itemsRef.child(editingKey).set(updatedItem);
+      resetAdminPanel();
+    });
+  }
+}
+
+function resetAdminPanel() {
+  // Clear inputs
+  document.getElementById('item-name').value = '';
+  document.getElementById('item-price').value = '';
+  document.getElementById('item-image').value = '';
+
+  // Reset buttons
+  document.getElementById('add-btn').style.display = 'block';
+  document.getElementById('update-btn').style.display = 'none';
+
+  editingKey = null;
+}
+
+
+</script>
+
+</body>
+</html>
