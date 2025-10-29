@@ -253,9 +253,12 @@
   }
 
   .item img {
-    max-width: 150px; /* adjust as needed */
+    width: 40vw;           /* scales image to 40% of the screen width */
+    max-width: 250px;      /* caps it so it doesn’t explode on larger phones */
     height: auto;
-  }
+    margin: 0 auto;        /* centers image if layout shifts to column */
+    display: block;
+    }
 
   .item div, .item button {
     width: 100%; /* let text and buttons fill width */
