@@ -274,58 +274,60 @@
     width: 95%;
   }
 
-  /* ===== Claim Form (Description Overlay) Mobile Fixes ===== */
-    #desc-box {
-    max-width: 90vw;          /* use most of the screen width */
-    padding: 6vw;             /* give more breathing room */
-    font-size: 4vw;           /* scale all text properly */
-    text-align: left;         /* align labels and inputs cleanly */
-    }
+  #claim-modal > div {
+    width: 90vw !important;
+    max-width: none !important;
+    padding: 6vw !important;
+    font-size: 4vw !important;
+    border-radius: 4vw !important;
+    position: relative !important;
+  }
 
-    #desc-box h3, 
-    #desc-box p {
-    font-size: 4vw;
-    margin-bottom: 4vw;
-    }
+  #claim-modal h2 {
+    font-size: 5vw !important;
+    margin-bottom: 3vw !important;
+  }
 
-    #desc-box input[type="text"],
-    #desc-box input[type="checkbox"] {
-    width: 100%;
-    padding: 3vw;
-    margin: 2vw 0;
-    font-size: 4vw;
-    border-radius: 2vw;
-    border: 0.4vw solid #ccc;
-    }
+  #claim-modal p {
+    font-size: 4vw !important;
+    margin-bottom: 4vw !important;
+  }
 
-    #desc-box input[type="checkbox"] {
-    width: auto;
-    transform: scale(2); /* make the checkbox bigger */
-    margin-right: 2vw;
-    }
+  #claim-modal input[type="text"] {
+    width: 100% !important;
+    font-size: 4vw !important;
+    padding: 3vw !important;
+    margin-bottom: 3vw !important;
+    border-radius: 2vw !important;
+    border: 0.4vw solid #ccc !important;
+  }
 
-    #desc-box label {
-    font-size: 3.5vw;
-    vertical-align: middle;
-    }
+  #claim-modal label {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 3.5vw !important;
+    line-height: 1.2;
+    margin-bottom: 6vw !important;
+  }
 
-    #desc-box button {
-    display: block;
-    width: 100%;
-    font-size: 4vw;
-    padding: 3vw 0;
-    margin-top: 4vw;
-    border-radius: 2vw;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    font-weight: bold;
-    }
+  #claim-modal input[type="checkbox"] {
+    transform: scale(2) !important;
+    margin-right: 2vw !important;
+  }
 
-    #desc-box button:hover {
-    background-color: #0056b3;
+  #claim-modal div[style*="justify-content:flex-end"] {
+    position: static !important; /* remove that absolute bottom positioning */
+    justify-content: center !important;
+    gap: 4vw !important;
+    width: 100% !important;
+  }
 
-    }
+  #claim-modal button {
+    font-size: 4vw !important;
+    padding: 3vw 5vw !important;
+    border-radius: 2vw !important;
+  }
+
 }
 
 </style>
