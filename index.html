@@ -201,9 +201,6 @@
     }
 
     #desc-close {
-      position: absolute;
-      top: 10px;
-      right: 15px;
       font-size: 24px;
       font-weight: bold;
       cursor: pointer;
@@ -282,8 +279,7 @@
         <!-- Link box -->
         <div id="desc-link" style="border:1px solid #ccc; padding:10px; border-radius:5px;
         background-color:#eef; text-align:center;"></div>
-
-        <button onclick="closeDescOverlay()" style="margin-top:10px; padding:5px 10px;">Close</button>
+        <button id="desc-close" onclick="closeDescOverlay()" style="margin-top:10px; padding:5px 10px; font-size:0.9em;">Close</button>
     </div>
     </div>
 
@@ -309,251 +305,273 @@
   </div>
 </div>
 
-  <script>
-    /* ===== Firebase Configuration ===== */
-    const firebaseConfig = {
-      apiKey: "AIzaSyARtsrEkiRqyxEv6KfdC48TJt1RCcZZ_Kg",
-      authDomain: "christmas-list-9a41e.firebaseapp.com",
-      databaseURL: "https://christmas-list-9a41e-default-rtdb.firebaseio.com",
-      projectId: "christmas-list-9a41e",
-      storageBucket: "christmas-list-9a41e.appspot.com",
-      messagingSenderId: "590904557299",
-      appId: "1:590904557299:web:d6989710fe9049637fc186"
-    };
+<!-- Claim Success Overlay -->
+<div id="claim-success-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background-color: rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:10003;">
+  <div style="background-color:rgb(255, 255, 255); padding:20px; border-radius:10px; max-width:400px; width:90%; text-align:center; position:relative;">
+    <h2 style="color: rgb(0, 0, 0); font-size: 36px; font-family: Arial, sans-serif;">Claim Successful!</h2>
+    <button id="claim-success-close" style="position:absolute; bottom:10px; left:10px; padding:5px 10px;">Close</button>
+  </div>
+</div>
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    let isAdmin = false;
+<script>
+  let currentItemKey = null; // Tracks which item is being claimed
+  let isAdmin = false;
 
-    // Reference to database node
-    const itemsRef = db.ref('items');
+  /* ===== Firebase Configuration ===== */
+  const firebaseConfig = {
+    apiKey: "AIzaSyARtsrEkiRqyxEv6KfdC48TJt1RCcZZ_Kg",
+    authDomain: "christmas-list-9a41e.firebaseapp.com",
+    databaseURL: "https://christmas-list-9a41e-default-rtdb.firebaseio.com",
+    projectId: "christmas-list-9a41e",
+    storageBucket: "christmas-list-9a41e.appspot.com",
+    messagingSenderId: "590904557299",
+    appId: "1:590904557299:web:d6989710fe9049637fc186"
+  };
 
-    /* ===== Realtime Firebase Sync ===== */
-    itemsRef.on('value', snapshot => {
-        const data = snapshot.val();
-        const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
-        // Sort explicitly by order
-        items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        renderList(items);
-        });
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const itemsRef = db.ref('items');
+  const claimedRef = db.ref('claimedItems');
 
-    /* ===== Render Items ===== */
-    function renderList(items) {
-      const listDiv = document.getElementById('list');
-      listDiv.innerHTML = '';
+  /* ===== Realtime Firebase Sync ===== */
+  itemsRef.on('value', snapshot => {
+    const data = snapshot.val();
+    const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
+    items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    renderList(items);
+  });
 
-      items.forEach((item) => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'item';
+  claimedRef.on('value', snapshot => {
+    const data = snapshot.val();
+    const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
+    renderClaimedList(items);
+  });
 
-        const img = document.createElement('img');
-        img.src = item.image || '';
-        itemDiv.appendChild(img);
+  /* ===== Render Items ===== */
+  function renderList(items) {
+    const listDiv = document.getElementById('list');
+    listDiv.innerHTML = '';
 
-        // Lightbox open
-        img.addEventListener('click', () => {
-          lightbox.style.display = 'flex';
-          lightboxImg.src = img.src;
-        });
+    items.forEach(item => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'item';
 
-        const text = document.createElement('div');
-        text.innerHTML = `<strong>${item.name}</strong><br>$${item.price}`;
-        itemDiv.appendChild(text);
+      // Image
+      const img = document.createElement('img');
+      img.src = item.image || '';
+      itemDiv.appendChild(img);
 
-        // Description button
-        const descBtn = document.createElement('button');
-        descBtn.className = 'description-text';
-        descBtn.textContent = 'description';
-        descBtn.onclick = () => {
+      // Lightbox
+      img.addEventListener('click', () => {
+        document.getElementById('lightbox').style.display = 'flex';
+        document.getElementById('lightbox-img').src = img.src;
+      });
+
+      // Text
+      const text = document.createElement('div');
+      text.innerHTML = `<strong>${item.name}</strong><br>$${item.price}`;
+      itemDiv.appendChild(text);
+
+      // Description Button
+      const descBtn = document.createElement('button');
+      descBtn.className = 'description-text';
+      descBtn.textContent = 'description';
+      descBtn.onclick = () => showDescription(item);
+      itemDiv.appendChild(descBtn);
+
+      // Claim Button
+      const claimBtn = document.createElement('button');
+      claimBtn.textContent = 'Claim';
+      claimBtn.onclick = () => {
+        currentItemKey = item.key;
+        openClaimModal();
+      };
+      itemDiv.appendChild(claimBtn);
+
+      listDiv.appendChild(itemDiv);
+    });
+  }
+
+  function showDescription(item) {
     const desc = item.description || 'No description available.';
-    const linkMatch = desc.match(/https?:\/\/\S+/); // find a link if one exists
-
-    // Fill main description box
     document.getElementById('desc-content').innerHTML = `<pre>${desc}</pre>`;
 
-    // Fill link box
     const linkBox = document.getElementById('desc-link');
     if (item.link) {
-        linkBox.innerHTML = `<a href="${item.link}" target="_blank">${item.link}</a>`;
+      linkBox.innerHTML = `<a href="${item.link}" target="_blank">${item.link}</a>`;
     } else {
-        const linkMatch = desc.match(/https?:\/\/\S+/); // fallback to parsing text
-        if (linkMatch) {
-            linkBox.innerHTML = `<a href="${linkMatch[0]}" target="_blank">${linkMatch[0]}</a>`;
-        } else {
-            linkBox.innerHTML = '<em>No link provided</em>';
-        }
+      const linkMatch = desc.match(/https?:\/\/\S+/);
+      linkBox.innerHTML = linkMatch ? `<a href="${linkMatch[0]}" target="_blank">${linkMatch[0]}</a>` : '<em>No link provided</em>';
     }
 
-    // Show the overlay
     document.getElementById('desc-overlay').style.display = 'flex';
-};
-        itemDiv.appendChild(descBtn);
+  }
 
-        // Claim button
-        const button = document.createElement('button');
-        button.textContent = 'Claim';
-        button.onclick = () => {
-          openClaimModal();
-        };
-        itemDiv.appendChild(button);
+  /* ===== Render Claimed Items ===== */
+  function renderClaimedList(items) {
+    const claimedContainer = document.getElementById('claimed-items-container');
+    claimedContainer.innerHTML = '';
+    items.forEach(item => {
+      const itemDiv = document.createElement('div');
+      itemDiv.className = 'item';
 
-        listDiv.appendChild(itemDiv);
-      });
-    }
-
-    /* ===== Add New Item ===== */
-    function addItem() {
-      if (!isAdmin) return alert("Only admin can add items!");
-      const name = document.getElementById('item-name').value;
-      const price = document.getElementById('item-price').value;
-      const imageInput = document.getElementById('item-image');
-
-      if (!name || !price) return alert('Please enter name and price');
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const newItem = { name, price, image: e.target.result };
-        itemsRef.push(newItem);
-      };
-
-      if (imageInput.files[0]) {
-        reader.readAsDataURL(imageInput.files[0]);
-      } else {
-        const newItem = { name, price, image: '' };
-        itemsRef.push(newItem);
+      if (item.image) {
+        const img = document.createElement('img');
+        img.src = item.image;
+        itemDiv.appendChild(img);
       }
 
-      document.getElementById('item-name').value = '';
-      document.getElementById('item-price').value = '';
-      imageInput.value = '';
-    }
+      const textDiv = document.createElement('div');
+      textDiv.innerHTML = `<strong>${item.name}</strong><br>$${item.price}<br><em>Claimed by: ${item.claimedBy || item.firstName + ' ' + item.lastName}</em>`;
+      itemDiv.appendChild(textDiv);
 
-    /* ===== Admin Login Handling ===== */
-    function toggleAdmin() {
-      const passwordInput = document.getElementById('admin-password');
-      const adminButton = document.querySelector('#admin-login button');
-      const password = passwordInput.value;
-
-      if (password === '0825') {
-        isAdmin = true;
-        window.location.href = 'admin.html';
-      } else {
-        const originalColor = adminButton.style.backgroundColor;
-        const originalText = adminButton.textContent;
-
-        adminButton.style.backgroundColor = 'red';
-        adminButton.textContent = 'Wrong password';
-
-        setTimeout(() => {
-          adminButton.style.backgroundColor = originalColor || 'gold';
-          adminButton.textContent = originalText;
-        }, 500);
-      }
-    }
-
-    /* ===== Snow Animation ===== */
-    function createSnowflake() {
-      const snowflake = document.createElement('div');
-      snowflake.className = 'snowflake';
-      snowflake.style.left = Math.random() * window.innerWidth + 'px';
-      snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
-      snowflake.style.opacity = Math.random();
-      snowflake.style.animationDuration = (Math.random() * 5 + 5) + 's';
-      snowflake.textContent = '❄';
-      document.getElementById('snow').appendChild(snowflake);
-
-      setTimeout(() => snowflake.remove(), 10000);
-    }
-
-    setInterval(createSnowflake, 200);
-
-    function exitAdmin() {
-      isAdmin = false;
-      document.getElementById('admin-section').style.display = 'none';
-      document.getElementById('admin-login').style.display = 'block';
-    }
-
-    /* ===== Lightbox Controls ===== */
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = document.getElementById('lightbox-img');
-    const lightboxClose = document.getElementById('lightbox-close');
-
-    lightboxClose.addEventListener('click', () => lightbox.style.display = 'none');
-
-    lightbox.addEventListener('click', e => {
-      if (e.target === lightbox) lightbox.style.display = 'none';
+      claimedContainer.appendChild(itemDiv);
     });
+  }
 
-    /* ===== Description Overlay Controls ===== */
-    document.getElementById("desc-close").addEventListener("click", () => {
-      document.getElementById("desc-overlay").style.display = "none";
-    });
+  /* ===== Add New Item ===== */
+  function addItem() {
+    if (!isAdmin) return alert("Only admin can add items!");
+    const name = document.getElementById('item-name').value;
+    const price = document.getElementById('item-price').value;
+    const imageInput = document.getElementById('item-image');
 
-    window.addEventListener("click", (e) => {
-      const overlay = document.getElementById("desc-overlay");
-      if (e.target === overlay) overlay.style.display = "none";
-    });
+    if (!name || !price) return alert('Please enter name and price');
 
-    function closeDescOverlay() {
-        document.getElementById('desc-overlay').style.display = 'none';
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const newItem = { name, price, image: e.target.result, order: Date.now() };
+      itemsRef.push(newItem);
+    };
+
+    if (imageInput.files[0]) {
+      reader.readAsDataURL(imageInput.files[0]);
+    } else {
+      itemsRef.push({ name, price, image: '', order: Date.now() });
     }
 
+    document.getElementById('item-name').value = '';
+    document.getElementById('item-price').value = '';
+    imageInput.value = '';
+  }
+
+  /* ===== Admin Login ===== */
+  function toggleAdmin() {
+    const passwordInput = document.getElementById('admin-password');
+    const password = passwordInput.value;
+    const adminButton = document.querySelector('#admin-login button');
+
+    if (password === '0825') {
+      isAdmin = true;
+      window.location.href = 'admin.html';
+    } else {
+      const originalColor = adminButton.style.backgroundColor;
+      const originalText = adminButton.textContent;
+      adminButton.style.backgroundColor = 'red';
+      adminButton.textContent = 'Wrong password';
+      setTimeout(() => {
+        adminButton.style.backgroundColor = originalColor || 'gold';
+        adminButton.textContent = originalText;
+      }, 500);
+    }
+  }
+
+  function exitAdmin() {
+    isAdmin = false;
+    document.getElementById('admin-section').style.display = 'none';
+    document.getElementById('admin-login').style.display = 'block';
+  }
+
+  /* ===== Snow Animation ===== */
+  function createSnowflake() {
+    const snowflake = document.createElement('div');
+    snowflake.className = 'snowflake';
+    snowflake.style.left = Math.random() * window.innerWidth + 'px';
+    snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+    snowflake.style.opacity = Math.random();
+    snowflake.style.animationDuration = (Math.random() * 5 + 5) + 's';
+    snowflake.textContent = '❄';
+    document.getElementById('snow').appendChild(snowflake);
+    setTimeout(() => snowflake.remove(), 10000);
+  }
+  setInterval(createSnowflake, 200);
+
+  /* ===== Lightbox Controls ===== */
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxClose = document.getElementById('lightbox-close');
+
+  lightboxClose.addEventListener('click', () => lightbox.style.display = 'none');
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) lightbox.style.display = 'none'; });
+
+  /* ===== Description Overlay Controls ===== */
+  document.getElementById("desc-close").addEventListener("click", () => document.getElementById("desc-overlay").style.display = "none");
+  window.addEventListener("click", e => { if (e.target === document.getElementById("desc-overlay")) document.getElementById("desc-overlay").style.display = "none"; });
+
+  /* ===== Claim Modal ===== */
   function openClaimModal() {
-    document.getElementById('claim-modal').style.display = 'flex';
+    const modal = document.getElementById('claim-modal');
+    modal.style.display = 'flex';
+    document.getElementById('claim-first-name').value = '';
+    document.getElementById('claim-last-name').value = '';
+    const checkbox = document.getElementById('claim-confirm');
+    checkbox.checked = false;
+
+    const claimBtn = document.getElementById('claim-confirm-btn');
+    claimBtn.disabled = true;
+    claimBtn.style.opacity = '0.5';
+
+    checkbox.onchange = () => {
+      claimBtn.disabled = !checkbox.checked;
+      claimBtn.style.opacity = checkbox.checked ? '1' : '0.5';
+    };
+
+    document.getElementById('claim-cancel-btn').onclick = () => modal.style.display = 'none';
   }
 
-  function closeClaimModal() {
+  document.getElementById('claim-confirm-btn').addEventListener('click', async () => {
+    const firstName = document.getElementById('claim-first-name').value.trim();
+    const lastName = document.getElementById('claim-last-name').value.trim();
+    const confirmBox = document.getElementById('claim-confirm');
+
+    if (!firstName || !lastName || !confirmBox.checked || !currentItemKey) return alert("Please fill out all fields and check the box.");
+
+    const itemRef = firebase.database().ref('items/' + currentItemKey);
+    const snapshot = await itemRef.once('value');
+    const itemData = snapshot.val();
+    if (!itemData) return alert("Error: Item not found.");
+
+    await claimedRef.push({ 
+        ...itemData, 
+        firstName, 
+        lastName, 
+        claimedBy: `${firstName} ${lastName}`, 
+        claimedAt: Date.now() 
+    });
+    await itemRef.remove();
+
     document.getElementById('claim-modal').style.display = 'none';
-  }
+    document.getElementById('claim-first-name').value = '';
+    document.getElementById('claim-last-name').value = '';
+    document.getElementById('claim-confirm').checked = false;
+    document.getElementById('claim-confirm-btn').disabled = true;
+    document.getElementById('claim-confirm-btn').style.opacity = '0.5';
 
-  // Open claim modal
-function openClaimModal() {
-  const modal = document.getElementById('claim-modal');
-  modal.style.display = 'flex';
-
-  // Reset inputs and buttons
-  document.getElementById('claim-first-name').value = '';
-  document.getElementById('claim-last-name').value = '';
-  const checkbox = document.getElementById('claim-confirm');
-  checkbox.checked = false;
-
-  const claimBtn = document.getElementById('claim-confirm-btn');
-  claimBtn.disabled = true;
-  claimBtn.style.opacity = '0.5';
-
-  const cancelBtn = document.getElementById('claim-cancel-btn');
-
-  // Event: checkbox toggles Claim button
-  checkbox.onchange = () => {
-    claimBtn.disabled = !checkbox.checked;
-    claimBtn.style.opacity = checkbox.checked ? '1' : '0.5';
-  };
-
-  // Event: Cancel closes modal
-  cancelBtn.onclick = () => {
-    modal.style.display = 'none';
-  };
-}
-
-// Enable Claim button only if checkbox is checked
-document.addEventListener("DOMContentLoaded", () => {
-  const checkbox = document.getElementById('claim-confirm');
-  const claimBtn = document.getElementById('claim-confirm-btn');
-  const cancelBtn = document.getElementById('claim-cancel-btn');
-
-  // Update Claim button state when checkbox changes
-  checkbox.addEventListener('change', () => {
-    claimBtn.disabled = !checkbox.checked;
-    claimBtn.style.opacity = checkbox.checked ? '1' : '0.5';
+    const claimedBy = `${firstName} ${lastName}`;
+    const successOverlay = document.getElementById('claim-success-overlay');
+    successOverlay.style.display = 'flex';
+    document.getElementById('claim-success-close').addEventListener('click', () => {
+    document.getElementById('claim-success-overlay').style.display = 'none';
+    });
   });
 
-  // Cancel button closes modal
-  cancelBtn.addEventListener('click', () => {
-    document.getElementById('claim-modal').style.display = 'none';
-  });
+  // Close button for success overlay
+document.getElementById('claim-success-close').addEventListener('click', () => {
+    document.getElementById('claim-success-overlay').style.display = 'none';
 });
 
-  </script>
+</script>
 </body>
 </html>

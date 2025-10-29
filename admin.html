@@ -113,84 +113,177 @@
   <button id="update-btn" style="display:none;" onclick="updateItem()">Update Item</button>
 </div>
 
+<!-- Reveal Claimed Items Button -->
+<div style="margin-top:20px; display:flex; justify-content:flex-start;">
+  <button id="reveal-claimed-btn" 
+    style="background:#facc15; border:none; border-radius:8px; color:#000; font-weight:bold;
+    padding:10px 20px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+    Reveal Claimed Items
+  </button>
+</div>
+
+<!-- Hidden Claimed Items List -->
+<!-- Hidden Claimed Items List -->
+<div id="claimed-list" 
+  style="display:none; max-width:800px; margin:20px; padding:10px;
+  background-color:rgba(0,0,0,0.5); border-radius:15px; color:white;">
+  <h3 style="margin-top:0;">Claimed Items</h3>
+  <div id="claimed-items-container"></div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
 
 <script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyARtsrEkiRqyxEv6KfdC48TJt1RCcZZ_Kg",
-    authDomain: "christmas-list-9a41e.firebaseapp.com",
-    databaseURL: "https://christmas-list-9a41e-default-rtdb.firebaseio.com",
-    projectId: "christmas-list-9a41e",
-    storageBucket: "christmas-list-9a41e.appspot.com",
-    messagingSenderId: "590904557299",
-    appId: "1:590904557299:web:d6989710fe9049637fc186"
-  };
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-  const itemsRef = db.ref('items');
-  let editingKey = null;
+let isAdmin = true; // Admin page is always authenticated
 
+const firebaseConfig = {
+  apiKey: "AIzaSyARtsrEkiRqyxEv6KfdC48TJt1RCcZZ_Kg",
+  authDomain: "christmas-list-9a41e.firebaseapp.com",
+  databaseURL: "https://christmas-list-9a41e-default-rtdb.firebaseio.com",
+  projectId: "christmas-list-9a41e",
+  storageBucket: "christmas-list-9a41e.appspot.com",
+  messagingSenderId: "590904557299",
+  appId: "1:590904557299:web:d6989710fe9049637fc186"
+};
 
-  itemsRef.on('value', snapshot => {
-    const data = snapshot.val();
-    const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
-    renderList(items);
-  });
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const itemsRef = db.ref('items');
+const claimedRef = db.ref('claimedItems');
+let editingKey = null;
+let currentItemKey = null;
 
-  function renderList(items) {
-    const listDiv = document.getElementById('list');
-    listDiv.innerHTML = '';
+// LISTEN FOR ITEMS
+itemsRef.on('value', snapshot => {
+  const data = snapshot.val();
+  const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
+  items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  renderList(items);
+});
 
-    items.forEach(item => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'item';
-        itemDiv.draggable = true;
-        itemDiv.dataset.key = item.key; // <-- ADD THIS
+// LISTEN FOR CLAIMED ITEMS
+claimedRef.on('value', snapshot => {
+  const data = snapshot.val();
+  const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
+  renderClaimedList(items);
+});
 
-        // Image
-        if (item.image) {
-        const img = document.createElement('img');
-        img.src = item.image;
-        itemDiv.appendChild(img);
-        }
+// RENDER MAIN LIST
+function renderList(items) {
+  const listDiv = document.getElementById('list');
+  listDiv.innerHTML = '';
 
-        // Name, price, description, link
-        const textDiv = document.createElement('div');
-        textDiv.innerHTML = `<strong>${item.name}</strong><br>$${item.price}<br><pre style="white-space: pre-wrap; margin:0;">${item.description || ''}</pre>${item.link ? `<br><a href="${item.link}" target="_blank" style="color:gold;">Link</a>` : ''}`;
-        itemDiv.appendChild(textDiv);
+  items.forEach(item => {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'item';
+    itemDiv.draggable = true;
+    itemDiv.dataset.key = item.key;
 
-        // Buttons
-        const buttonsDiv = document.createElement('div');
-        buttonsDiv.style.display = 'flex';
-        buttonsDiv.style.gap = '5px';
-
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = 'Remove';
-        removeBtn.onclick = () => itemsRef.child(item.key).remove();
-        buttonsDiv.appendChild(removeBtn);
-
-        const editBtn = document.createElement('button');
-        editBtn.textContent = 'Edit';
-        editBtn.onclick = () => editItem(item.key, item.name, item.price, item.image, item.description, item.link); // pass link
-        buttonsDiv.appendChild(editBtn);
-
-        itemDiv.appendChild(buttonsDiv);
-        listDiv.appendChild(itemDiv);
-
-        // Drag-and-drop events
-        itemDiv.addEventListener('dragstart', handleDragStart);
-        itemDiv.addEventListener('dragover', handleDragOver);
-        itemDiv.addEventListener('dragleave', handleDragLeave);
-        itemDiv.addEventListener('drop', handleDrop);
-        itemDiv.addEventListener('dragend', handleDragEnd);
-    });
+    // Image
+    if (item.image) {
+      const img = document.createElement('img');
+      img.src = item.image;
+      itemDiv.appendChild(img);
     }
 
-  function addItem() {
-  if (!isAdmin) return alert("Only admin can add items!");
+    // Text
+    const textDiv = document.createElement('div');
+    textDiv.innerHTML = `<strong>${item.name}</strong><br>$${item.price}<br><pre style="white-space: pre-wrap; margin:0;">${item.description || ''}</pre>${item.link ? `<br><a href="${item.link}" target="_blank" style="color:gold;">Link</a>` : ''}`;
+    itemDiv.appendChild(textDiv);
 
+    // Left arrow buttons
+    const arrowDiv = document.createElement('div');
+    arrowDiv.style.display = 'flex';
+    arrowDiv.style.flexDirection = 'column';
+    arrowDiv.style.marginRight = '10px';
+
+    const upBtn = document.createElement('button');
+    upBtn.textContent = '↑';
+    upBtn.onclick = () => moveItem(item.key, -1);
+    arrowDiv.appendChild(upBtn);
+
+    const downBtn = document.createElement('button');
+    downBtn.textContent = '↓';
+    downBtn.onclick = () => moveItem(item.key, 1);
+    arrowDiv.appendChild(downBtn);
+
+    // Right edit/remove buttons
+    const rightButtonsDiv = document.createElement('div');
+    rightButtonsDiv.style.display = 'flex';
+    rightButtonsDiv.style.flexDirection = 'row';
+    rightButtonsDiv.style.gap = '10px';
+    rightButtonsDiv.style.marginLeft = 'auto';
+
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = () => editItem(item.key, item.name, item.price, item.image, item.description, item.link);
+    rightButtonsDiv.appendChild(editBtn);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = 'Remove';
+    removeBtn.onclick = () => itemsRef.child(item.key).remove();
+    rightButtonsDiv.appendChild(removeBtn);
+
+    // Compose item
+    itemDiv.style.display = 'flex';
+    itemDiv.style.alignItems = 'center';
+    itemDiv.appendChild(arrowDiv);
+    itemDiv.appendChild(textDiv);
+    itemDiv.appendChild(rightButtonsDiv);
+
+    listDiv.appendChild(itemDiv);
+  });
+}
+
+// RENDER CLAIMED ITEMS
+function renderClaimedList(items) {
+  const claimedContainer = document.getElementById('claimed-items-container');
+  claimedContainer.innerHTML = '';
+
+  items.forEach(item => {
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'item';
+
+    if (item.image) {
+      const img = document.createElement('img');
+      img.src = item.image;
+      itemDiv.appendChild(img);
+    }
+
+    const textDiv = document.createElement('div');
+    textDiv.innerHTML = `<strong>${item.name}</strong><br>$${item.price}<br>
+    <em>Claimed by: ${item.firstName || ''} ${item.lastName || ''}</em>`;
+    itemDiv.appendChild(textDiv);
+
+    // Add "Remove" button
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = 'Remove';
+    removeBtn.onclick = async () => {
+      // Add the item back to the main list
+      const newItem = { 
+        name: item.name, 
+        price: item.price, 
+        image: item.image || '', 
+        description: item.description || '', 
+        link: item.link || '', 
+        order: Date.now() 
+      };
+      await itemsRef.push(newItem);
+
+      // Remove from claimed
+      claimedRef.child(item.key).remove();
+    };
+    itemDiv.appendChild(removeBtn);
+
+    claimedContainer.appendChild(itemDiv);
+  });
+}
+
+// ADD ITEM
+function addItem() {
+  if (!isAdmin) return alert("Only admin can add items!");
   const name = document.getElementById('item-name').value;
   const price = document.getElementById('item-price').value;
   const link = document.getElementById('item-link').value;
@@ -198,157 +291,106 @@
 
   if (!name || !price) return alert('Please enter name and price');
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const newItem = { 
-      name, 
-      price, 
-      image: e.target.result, 
-      link, 
-      order: Date.now() // use timestamp for initial order
-    };
+  const pushItem = image => {
+    const newItem = { name, price, image, link, order: Date.now() };
     itemsRef.push(newItem);
   };
 
   if (imageInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => pushItem(e.target.result);
     reader.readAsDataURL(imageInput.files[0]);
-  } else {
-    const newItem = { 
-      name, 
-      price, 
-      image: '', 
-      link, 
-      order: Date.now() 
-    };
-    itemsRef.push(newItem);
-  }
+  } else pushItem('');
 
-  // Clear inputs
   document.getElementById('item-name').value = '';
   document.getElementById('item-price').value = '';
   document.getElementById('item-link').value = '';
   imageInput.value = '';
 }
 
-  function editItem(key, currentName, currentPrice, currentImage, currentDescription, currentLink) {
-    editingKey = key;
-    document.getElementById('item-name').value = currentName;
-    document.getElementById('item-price').value = currentPrice;
-    document.getElementById('item-description').value = currentDescription || '';
-    document.getElementById('item-link').value = currentLink || ''; // populate link
-    document.getElementById('add-btn').style.display = 'none';
-    document.getElementById('update-btn').style.display = 'block';
-    }
+// EDIT ITEM
+function editItem(key, name, price, image, description, link) {
+  editingKey = key;
+  document.getElementById('item-name').value = name;
+  document.getElementById('item-price').value = price;
+  document.getElementById('item-description').value = description || '';
+  document.getElementById('item-link').value = link || '';
+  document.getElementById('add-btn').style.display = 'none';
+  document.getElementById('update-btn').style.display = 'block';
+}
 
-  function updateItem() {
-    if (!editingKey) return;
+// UPDATE ITEM
+function updateItem() {
+  if (!editingKey) return;
+  const name = document.getElementById('item-name').value;
+  const price = document.getElementById('item-price').value;
+  const description = document.getElementById('item-description').value;
+  const link = document.getElementById('item-link').value;
+  const imageInput = document.getElementById('item-image');
 
-    const name = document.getElementById('item-name').value;
-    const price = document.getElementById('item-price').value;
-    const description = document.getElementById('item-description').value;
-    const link = document.getElementById('item-link').value; // get link
-    const imageInput = document.getElementById('item-image');
+  if (!name || !price) return alert('Please enter name and price');
 
-    if (!name || !price) return alert('Please enter name and price');
-
-    const updatedItem = { name, price, description, link, image: '' }; // include link
+  itemsRef.child(editingKey).once('value', snapshot => {
+    const oldItem = snapshot.val();
+    const updatedItem = { name, price, description, link, image: oldItem.image, order: oldItem.order };
 
     if (imageInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
+      const reader = new FileReader();
+      reader.onload = e => {
         updatedItem.image = e.target.result;
         itemsRef.child(editingKey).set(updatedItem);
         resetAdminPanel();
-        };
-        reader.readAsDataURL(imageInput.files[0]);
+      };
+      reader.readAsDataURL(imageInput.files[0]);
     } else {
-        itemsRef.child(editingKey).once('value', snapshot => {
-        const oldItem = snapshot.val();
-        updatedItem.image = oldItem.image;
-        itemsRef.child(editingKey).set(updatedItem);
-        resetAdminPanel();
-        });
+      itemsRef.child(editingKey).set(updatedItem);
+      resetAdminPanel();
     }
-  }
-
-  function resetAdminPanel() {
-    document.getElementById('item-name').value = '';
-    document.getElementById('item-price').value = '';
-    document.getElementById('item-description').value = '';
-    document.getElementById('item-image').value = '';
-    document.getElementById('add-btn').style.display = 'block';
-    document.getElementById('update-btn').style.display = 'none';
-    editingKey = null;
-  }
-
-  // Drag & Drop handlers
-
-  let dragIcon = null;
-
-  function handleDragStart(e) {
-    dragSrcEl = this;
-    this.style.opacity = '0.5';
-
-    // Create a clone for drag image
-    dragIcon = this.cloneNode(true);
-    dragIcon.style.position = 'absolute';
-    dragIcon.style.top = '-1000px'; 
-    dragIcon.style.left = '-1000px';
-    dragIcon.style.width = this.offsetWidth + 'px';
-    dragIcon.style.pointerEvents = 'none';
-    dragIcon.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
-    document.body.appendChild(dragIcon);
-
-    e.dataTransfer.setDragImage(dragIcon, e.offsetX, e.offsetY);
+  });
 }
 
-
-  function handleDragOver(e) {
-    e.preventDefault();
-    if (this !== dragSrcEl) this.style.backgroundColor = 'rgba(0,128,0,0.3)';
-  }
-
-  function handleDragLeave(e) {
-    if (this !== dragSrcEl) this.style.backgroundColor = '';
-  }
-
-  function handleDrop(e) {
-  e.stopPropagation();
-  if (dragSrcEl !== this) {
-    const listDiv = document.getElementById('list');
-    const children = Array.from(listDiv.children);
-    const srcIndex = children.indexOf(dragSrcEl);
-    const destIndex = children.indexOf(this);
-
-    if (srcIndex < destIndex) {
-      listDiv.insertBefore(dragSrcEl, this.nextSibling);
-    } else {
-      listDiv.insertBefore(dragSrcEl, this);
-    }
-
-    // Update Firebase order
-    Array.from(listDiv.children).forEach((child, index) => {
-      const key = child.dataset.key;
-      if (key) {
-        itemsRef.child(key).update({ order: index });
-      }
-    });
-  }
-  this.style.backgroundColor = '';
+// RESET ADMIN PANEL
+function resetAdminPanel() {
+  document.getElementById('item-name').value = '';
+  document.getElementById('item-price').value = '';
+  document.getElementById('item-description').value = '';
+  document.getElementById('item-image').value = '';
+  document.getElementById('add-btn').style.display = 'block';
+  document.getElementById('update-btn').style.display = 'none';
+  editingKey = null;
 }
 
+// MOVE ITEM
+function moveItem(key, direction) {
+  itemsRef.once('value', snapshot => {
+    const data = snapshot.val();
+    if (!data) return;
+    const items = Object.entries(data).map(([k, v]) => ({ key: k, ...v }));
+    items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-  function handleDragEnd(e) {
-    this.style.opacity = '1';
-    const listDiv = document.getElementById('list');
-    Array.from(listDiv.children).forEach(child => child.style.backgroundColor = '');
-    
-    if (dragIcon) {
-        document.body.removeChild(dragIcon);
-        dragIcon = null;
-    }
+    const index = items.findIndex(item => item.key === key);
+    if (index === -1) return;
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= items.length) return;
+
+    const tempOrder = items[index].order;
+    items[index].order = items[newIndex].order;
+    items[newIndex].order = tempOrder;
+
+    const updates = {};
+    updates[items[index].key + '/order'] = items[index].order;
+    updates[items[newIndex].key + '/order'] = items[newIndex].order;
+    itemsRef.update(updates);
+  });
 }
 
+// TOGGLE REVEAL CLAIMED ITEMS
+document.getElementById('reveal-claimed-btn').addEventListener('click', () => {
+  const claimedList = document.getElementById('claimed-list');
+  const isVisible = claimedList.style.display === 'block';
+  claimedList.style.display = isVisible ? 'none' : 'block';
+  document.getElementById('reveal-claimed-btn').textContent = isVisible ? 'Reveal Claimed Items' : 'Hide Claimed Items';
+});
 </script>
 </body>
 </html>
