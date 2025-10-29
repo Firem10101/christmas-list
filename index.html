@@ -242,20 +242,22 @@
   }
 
   .item {
-    align-items: center; /* center elements */
-    text-align: center; /* optional, looks nicer */
-    padding: 5%; /* more padding for vertical layout */
+    display: flex;
+    flex-direction: row; /* stay horizontal */
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* optional: allows items to stay horizontal but wrap if necessary */
   }
 
   .item img {
-    width: 60%; /* larger image on mobile */
+    width: 50%; /* larger image on mobile */
     max-width: 80%; /* cap width */
     margin: 0 0 3% 0; /* bottom spacing only */
   }
 
   .item div, .item button {
-    width: 100%; /* let text and buttons fill width */
-    margin: 5px 0; /* spacing between text/buttons */
+    margin-left: 10px; /* spacing between image/text/button */
+    flex: 1; /* optional: allows text/buttons to take available space */
   }
 
   .description-text, .item button {
