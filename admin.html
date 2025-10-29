@@ -44,7 +44,8 @@
     align-items: center;
     justify-content: space-between;
     background-color: rgba(255, 0, 0, 0.3);
-    transition: transform 0.2s;
+    transition: transform 0.2s, background-color 0.2s;
+    cursor: grab;
   }
 
   .item:hover {
@@ -67,7 +68,7 @@
     background-color: #ffa500;
   }
 
-  input {
+  input, textarea {
     padding: 5px;
     margin: 5px 0;
     border-radius: 5px;
@@ -75,7 +76,13 @@
     width: 100%;
   }
 
-  /* Side panel for admin actions */
+  textarea {
+    resize: vertical;
+    min-height: 60px;
+    white-space: pre-wrap;
+    font-family: inherit;
+  }
+
   #admin-panel {
     position: fixed;
     top: 0;
@@ -87,7 +94,6 @@
     overflow-y: auto;
     box-shadow: -5px 0 10px rgba(0,0,0,0.5);
   }
-
 </style>
 </head>
 <body>
@@ -97,15 +103,16 @@
 <div id="list"></div>
 
 <div id="admin-panel">
-  <h2>Add New Item</h2>
+  <h2>Add / Edit Item</h2>
   <input type="text" id="item-name" placeholder="Item Name">
   <input type="text" id="item-price" placeholder="Price">
+  <textarea id="item-description" placeholder="Description (optional)"></textarea>
+  <input type="text" id="item-link" placeholder="Item Link (optional)">
   <input type="file" id="item-image">
   <button id="add-btn" onclick="addItem()">Add Item</button>
   <button id="update-btn" style="display:none;" onclick="updateItem()">Update Item</button>
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
 
@@ -123,6 +130,8 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
   const itemsRef = db.ref('items');
+  let editingKey = null;
+
 
   itemsRef.on('value', snapshot => {
     const data = snapshot.val();
@@ -131,133 +140,215 @@
   });
 
   function renderList(items) {
-  const listDiv = document.getElementById('list');
-  listDiv.innerHTML = '';
+    const listDiv = document.getElementById('list');
+    listDiv.innerHTML = '';
 
-  items.forEach(item => {
-    const itemDiv = document.createElement('div');
-    itemDiv.className = 'item';
-    
-    // 1️⃣ Image first
-    if (item.image) {
-      const img = document.createElement('img');
-      img.src = item.image;
-      itemDiv.appendChild(img);
+    items.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'item';
+        itemDiv.draggable = true;
+        itemDiv.dataset.key = item.key; // <-- ADD THIS
+
+        // Image
+        if (item.image) {
+        const img = document.createElement('img');
+        img.src = item.image;
+        itemDiv.appendChild(img);
+        }
+
+        // Name, price, description, link
+        const textDiv = document.createElement('div');
+        textDiv.innerHTML = `<strong>${item.name}</strong><br>$${item.price}<br><pre style="white-space: pre-wrap; margin:0;">${item.description || ''}</pre>${item.link ? `<br><a href="${item.link}" target="_blank" style="color:gold;">Link</a>` : ''}`;
+        itemDiv.appendChild(textDiv);
+
+        // Buttons
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.style.display = 'flex';
+        buttonsDiv.style.gap = '5px';
+
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = 'Remove';
+        removeBtn.onclick = () => itemsRef.child(item.key).remove();
+        buttonsDiv.appendChild(removeBtn);
+
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.onclick = () => editItem(item.key, item.name, item.price, item.image, item.description, item.link); // pass link
+        buttonsDiv.appendChild(editBtn);
+
+        itemDiv.appendChild(buttonsDiv);
+        listDiv.appendChild(itemDiv);
+
+        // Drag-and-drop events
+        itemDiv.addEventListener('dragstart', handleDragStart);
+        itemDiv.addEventListener('dragover', handleDragOver);
+        itemDiv.addEventListener('dragleave', handleDragLeave);
+        itemDiv.addEventListener('drop', handleDrop);
+        itemDiv.addEventListener('dragend', handleDragEnd);
+    });
     }
-
-    // 2️⃣ Name and price next
-    const textDiv = document.createElement('div');
-    textDiv.innerHTML = `<strong>${item.name}</strong><br>$${item.price}`;
-    itemDiv.appendChild(textDiv);
-
-    // 3️⃣ Buttons last
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.style.display = 'flex';
-    buttonsDiv.style.gap = '5px'; // puts the buttons close together
-
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = 'Remove';
-    removeBtn.onclick = () => {
-      itemsRef.child(item.key).remove();
-    };
-    buttonsDiv.appendChild(removeBtn);
-
-    const editBtn = document.createElement('button');
-    editBtn.textContent = 'Edit';
-    editBtn.onclick = () => editItem(item.key, item.name, item.price, item.image);
-    buttonsDiv.appendChild(editBtn);
-
-    itemDiv.appendChild(buttonsDiv);
-
-    listDiv.appendChild(itemDiv);
-  });
-}
-
 
   function addItem() {
-    const name = document.getElementById('item-name').value;
-    const price = document.getElementById('item-price').value;
-    const imageInput = document.getElementById('item-image');
-
-    if (!name || !price) return alert('Please enter name and price');
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const newItem = { name, price, image: e.target.result };
-      itemsRef.push(newItem);
-    };
-
-    if (imageInput.files[0]) {
-      reader.readAsDataURL(imageInput.files[0]);
-    } else {
-      itemsRef.push({ name, price, image: '' });
-    }
-
-    document.getElementById('item-name').value = '';
-    document.getElementById('item-price').value = '';
-    imageInput.value = '';
-  }
-
-  function editItem(key, currentName, currentPrice, currentImage) {
-  editingKey = key; // remember which item we're editing
-
-  // Pre-fill the panel inputs
-  document.getElementById('item-name').value = currentName;
-  document.getElementById('item-price').value = currentPrice;
-
-  // Optional: can't prefill file input due to browser restrictions
-  // Just leave it blank; user can choose a new image if they want
-
-  // Hide "Add" button, show "Update" button
-  document.getElementById('add-btn').style.display = 'none';
-  document.getElementById('update-btn').style.display = 'block';
-}
-
-function updateItem() {
-  if (!editingKey) return;
+  if (!isAdmin) return alert("Only admin can add items!");
 
   const name = document.getElementById('item-name').value;
   const price = document.getElementById('item-price').value;
+  const link = document.getElementById('item-link').value;
   const imageInput = document.getElementById('item-image');
 
   if (!name || !price) return alert('Please enter name and price');
 
-  const updatedItem = { name, price, image: '' };
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const newItem = { 
+      name, 
+      price, 
+      image: e.target.result, 
+      link, 
+      order: Date.now() // use timestamp for initial order
+    };
+    itemsRef.push(newItem);
+  };
 
   if (imageInput.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      updatedItem.image = e.target.result;
-      itemsRef.child(editingKey).set(updatedItem);
-      resetAdminPanel();
-    };
     reader.readAsDataURL(imageInput.files[0]);
   } else {
-    // If no new image selected, keep the old one
-    itemsRef.child(editingKey).once('value', snapshot => {
-      const oldItem = snapshot.val();
-      updatedItem.image = oldItem.image;
-      itemsRef.child(editingKey).set(updatedItem);
-      resetAdminPanel();
-    });
+    const newItem = { 
+      name, 
+      price, 
+      image: '', 
+      link, 
+      order: Date.now() 
+    };
+    itemsRef.push(newItem);
   }
-}
 
-function resetAdminPanel() {
   // Clear inputs
   document.getElementById('item-name').value = '';
   document.getElementById('item-price').value = '';
-  document.getElementById('item-image').value = '';
+  document.getElementById('item-link').value = '';
+  imageInput.value = '';
+}
 
-  // Reset buttons
-  document.getElementById('add-btn').style.display = 'block';
-  document.getElementById('update-btn').style.display = 'none';
+  function editItem(key, currentName, currentPrice, currentImage, currentDescription, currentLink) {
+    editingKey = key;
+    document.getElementById('item-name').value = currentName;
+    document.getElementById('item-price').value = currentPrice;
+    document.getElementById('item-description').value = currentDescription || '';
+    document.getElementById('item-link').value = currentLink || ''; // populate link
+    document.getElementById('add-btn').style.display = 'none';
+    document.getElementById('update-btn').style.display = 'block';
+    }
 
-  editingKey = null;
+  function updateItem() {
+    if (!editingKey) return;
+
+    const name = document.getElementById('item-name').value;
+    const price = document.getElementById('item-price').value;
+    const description = document.getElementById('item-description').value;
+    const link = document.getElementById('item-link').value; // get link
+    const imageInput = document.getElementById('item-image');
+
+    if (!name || !price) return alert('Please enter name and price');
+
+    const updatedItem = { name, price, description, link, image: '' }; // include link
+
+    if (imageInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+        updatedItem.image = e.target.result;
+        itemsRef.child(editingKey).set(updatedItem);
+        resetAdminPanel();
+        };
+        reader.readAsDataURL(imageInput.files[0]);
+    } else {
+        itemsRef.child(editingKey).once('value', snapshot => {
+        const oldItem = snapshot.val();
+        updatedItem.image = oldItem.image;
+        itemsRef.child(editingKey).set(updatedItem);
+        resetAdminPanel();
+        });
+    }
+  }
+
+  function resetAdminPanel() {
+    document.getElementById('item-name').value = '';
+    document.getElementById('item-price').value = '';
+    document.getElementById('item-description').value = '';
+    document.getElementById('item-image').value = '';
+    document.getElementById('add-btn').style.display = 'block';
+    document.getElementById('update-btn').style.display = 'none';
+    editingKey = null;
+  }
+
+  // Drag & Drop handlers
+
+  let dragIcon = null;
+
+  function handleDragStart(e) {
+    dragSrcEl = this;
+    this.style.opacity = '0.5';
+
+    // Create a clone for drag image
+    dragIcon = this.cloneNode(true);
+    dragIcon.style.position = 'absolute';
+    dragIcon.style.top = '-1000px'; 
+    dragIcon.style.left = '-1000px';
+    dragIcon.style.width = this.offsetWidth + 'px';
+    dragIcon.style.pointerEvents = 'none';
+    dragIcon.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+    document.body.appendChild(dragIcon);
+
+    e.dataTransfer.setDragImage(dragIcon, e.offsetX, e.offsetY);
 }
 
 
-</script>
+  function handleDragOver(e) {
+    e.preventDefault();
+    if (this !== dragSrcEl) this.style.backgroundColor = 'rgba(0,128,0,0.3)';
+  }
 
+  function handleDragLeave(e) {
+    if (this !== dragSrcEl) this.style.backgroundColor = '';
+  }
+
+  function handleDrop(e) {
+  e.stopPropagation();
+  if (dragSrcEl !== this) {
+    const listDiv = document.getElementById('list');
+    const children = Array.from(listDiv.children);
+    const srcIndex = children.indexOf(dragSrcEl);
+    const destIndex = children.indexOf(this);
+
+    if (srcIndex < destIndex) {
+      listDiv.insertBefore(dragSrcEl, this.nextSibling);
+    } else {
+      listDiv.insertBefore(dragSrcEl, this);
+    }
+
+    // Update Firebase order
+    Array.from(listDiv.children).forEach((child, index) => {
+      const key = child.dataset.key;
+      if (key) {
+        itemsRef.child(key).update({ order: index });
+      }
+    });
+  }
+  this.style.backgroundColor = '';
+}
+
+
+  function handleDragEnd(e) {
+    this.style.opacity = '1';
+    const listDiv = document.getElementById('list');
+    Array.from(listDiv.children).forEach(child => child.style.backgroundColor = '');
+    
+    if (dragIcon) {
+        document.body.removeChild(dragIcon);
+        dragIcon = null;
+    }
+}
+
+</script>
 </body>
 </html>

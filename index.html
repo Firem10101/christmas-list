@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Christmas List</title>
+
   <style>
+    /* ===== Base Styles ===== */
     body {
       font-family: 'Arial', sans-serif;
       margin: 0;
@@ -20,6 +22,7 @@
       text-shadow: 2px 2px 4px #000;
     }
 
+    /* ===== List Container ===== */
     #list {
       max-width: 800px;
       margin: 20px;
@@ -28,6 +31,7 @@
       border-radius: 15px;
     }
 
+    /* ===== Item Cards ===== */
     .item {
       border: 2px solid #fff;
       border-radius: 10px;
@@ -44,12 +48,23 @@
       background-color: rgba(0, 128, 0, 0.3);
     }
 
+    /* ===== Images ===== */
     img {
       max-width: 100px;
       margin-right: 15px;
       border-radius: 10px;
     }
 
+    .item img {
+      transition: transform 0.2s;
+    }
+
+    .item img:hover {
+      transform: scale(1.2);
+      cursor: zoom-in;
+    }
+
+    /* ===== Buttons & Inputs ===== */
     button {
       margin-left: auto;
       padding: 5px 10px;
@@ -76,7 +91,7 @@
       margin-top: 40px;
     }
 
-    /* Snow effect */
+    /* ===== Snow Effect ===== */
     #snow {
       position: fixed;
       top: 0;
@@ -102,7 +117,9 @@
       to { transform: translateY(100vh); }
     }
 
-    #admin-login, #admin-section {
+    /* ===== Admin Panels ===== */
+    #admin-login, 
+    #admin-section {
       position: fixed;
       top: 20px;
       right: 20px;
@@ -115,31 +132,122 @@
       z-index: 10000;
     }
 
-    #admin-login input, #admin-section input {
+    #admin-login input, 
+    #admin-section input {
       width: 100%;
       font-size: 0.9em;
       margin: 5px 0;
     }
 
-    #admin-login button, #admin-section button {
+    #admin-login button, 
+    #admin-section button {
       width: 100%;
       font-size: 0.9em;
       padding: 5px;
     }
+
+    /* ===== Lightbox Overlay ===== */
+    #lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+
+    #lightbox img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #000;
+    }
+
+    #lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 40px;
+      color: #fff;
+      font-size: 40px;
+      cursor: pointer;
+    }
+
+    /* ===== Description Overlay ===== */
+    #desc-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10001;
+    }
+
+    #desc-box {
+      background: rgba(255,255,255,0.95);
+      color: #000;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      text-align: center;
+      position: relative;
+    }
+
+    #desc-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .description-text {
+      font-style: italic;
+      text-decoration: underline;
+      color: #fff;
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+      font-size: 0.9em;
+    }
+
+    .description-text:hover {
+      color: #ff0;
+    }
+
+    #desc-content pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        color: black;
+        font-size: 1em;
+        font-family: inherit;
+        margin: 0;
+    }
+
   </style>
 </head>
+
 <body>
   <div id="snow"></div>
 
-  <h1>My Christmas List</h1>
+  <h1>Brandon's Birthday / Christmas List</h1>
 
-  <!-- Admin login -->
+  <!-- ===== Admin Login ===== -->
   <div id="admin-login">
     <input type="password" id="admin-password" placeholder="Admin Password">
     <button onclick="toggleAdmin()">Enter Admin Mode</button>
   </div>
 
-  <!-- Admin section (hidden by default) -->
+  <!-- ===== Admin Section ===== -->
   <div id="admin-section" style="display: none;">
     <h2>Add New Item</h2>
     <input type="text" id="item-name" placeholder="Item Name">
@@ -149,15 +257,60 @@
     <button id="exit-admin-btn" onclick="exitAdmin()">Exit Admin Mode</button>
   </div>
 
-  <!-- Public list -->
+  <!-- ===== Public List ===== -->
   <div id="list"></div>
 
-  <!-- Firebase SDKs -->
+  <!-- ===== Firebase SDKs ===== -->
   <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-database-compat.js"></script>
 
+  <!-- ===== Lightbox Overlay ===== -->
+  <div id="lightbox" style="display:none;">
+    <span id="lightbox-close">&times;</span>
+    <img id="lightbox-img" src="">
+  </div>
+
+  <!-- Description Overlay -->
+    <div id="desc-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background-color: rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:1000;">
+    <div id="desc-box" style="background-color:white; padding:20px; border-radius:10px;
+        max-width:400px; width:90%; text-align:left;">
+        <!-- Main description box -->
+        <div id="desc-content" style="margin-bottom:10px; border:1px solid #ccc; padding:10px;
+        border-radius:5px; background-color:#f8f8f8; white-space:pre-wrap; word-wrap:break-word;"></div>
+        
+        <!-- Link box -->
+        <div id="desc-link" style="border:1px solid #ccc; padding:10px; border-radius:5px;
+        background-color:#eef; text-align:center;"></div>
+
+        <button onclick="closeDescOverlay()" style="margin-top:10px; padding:5px 10px;">Close</button>
+    </div>
+    </div>
+
+        <!-- Claim Modal -->
+<div id="claim-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:10002;">
+  <div style="background:#fff; color:#000; padding:20px; border-radius:10px; max-width:350px; width:90%; position:relative;">
+    <h2>Claim Item</h2>
+    <p>Please enter your information:</p>
+    
+    <input type="text" id="claim-first-name" placeholder="First Name" style="width:95%; margin-bottom:10px; padding:5px;"><br>
+    <input type="text" id="claim-last-name" placeholder="Last Name" style="width:95%; margin-bottom:10px; padding:5px;"><br>
+    
+    <label style="display:flex; align-items:center; margin-bottom:15px;">
+      <input type="checkbox" id="claim-confirm" style="margin-right:10px;">
+      <span>by checking this box you agree to claim this item</span>
+    </label>
+    
+    <div style="display:flex; justify-content:flex-end; gap:10px; position:absolute; bottom:20px; right:20px; width:auto;">
+  <button id="claim-confirm-btn" disabled style="opacity:0.5;">Claim</button>
+  <button id="claim-cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
   <script>
-    // Firebase config
+    /* ===== Firebase Configuration ===== */
     const firebaseConfig = {
       apiKey: "AIzaSyARtsrEkiRqyxEv6KfdC48TJt1RCcZZ_Kg",
       authDomain: "christmas-list-9a41e.firebaseapp.com",
@@ -173,16 +326,19 @@
     const db = firebase.database();
     let isAdmin = false;
 
-    // Reference to "items" node in database
+    // Reference to database node
     const itemsRef = db.ref('items');
 
-    // Listen for changes in Firebase in real time
-    itemsRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
-      renderList(items);
-    });
+    /* ===== Realtime Firebase Sync ===== */
+    itemsRef.on('value', snapshot => {
+        const data = snapshot.val();
+        const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
+        // Sort explicitly by order
+        items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        renderList(items);
+        });
 
+    /* ===== Render Items ===== */
     function renderList(items) {
       const listDiv = document.getElementById('list');
       listDiv.innerHTML = '';
@@ -195,14 +351,50 @@
         img.src = item.image || '';
         itemDiv.appendChild(img);
 
+        // Lightbox open
+        img.addEventListener('click', () => {
+          lightbox.style.display = 'flex';
+          lightboxImg.src = img.src;
+        });
+
         const text = document.createElement('div');
         text.innerHTML = `<strong>${item.name}</strong><br>$${item.price}`;
         itemDiv.appendChild(text);
 
+        // Description button
+        const descBtn = document.createElement('button');
+        descBtn.className = 'description-text';
+        descBtn.textContent = 'description';
+        descBtn.onclick = () => {
+    const desc = item.description || 'No description available.';
+    const linkMatch = desc.match(/https?:\/\/\S+/); // find a link if one exists
+
+    // Fill main description box
+    document.getElementById('desc-content').innerHTML = `<pre>${desc}</pre>`;
+
+    // Fill link box
+    const linkBox = document.getElementById('desc-link');
+    if (item.link) {
+        linkBox.innerHTML = `<a href="${item.link}" target="_blank">${item.link}</a>`;
+    } else {
+        const linkMatch = desc.match(/https?:\/\/\S+/); // fallback to parsing text
+        if (linkMatch) {
+            linkBox.innerHTML = `<a href="${linkMatch[0]}" target="_blank">${linkMatch[0]}</a>`;
+        } else {
+            linkBox.innerHTML = '<em>No link provided</em>';
+        }
+    }
+
+    // Show the overlay
+    document.getElementById('desc-overlay').style.display = 'flex';
+};
+        itemDiv.appendChild(descBtn);
+
+        // Claim button
         const button = document.createElement('button');
         button.textContent = 'Claim';
         button.onclick = () => {
-          db.ref('items/' + item.key).remove(); // remove item from Firebase
+          openClaimModal();
         };
         itemDiv.appendChild(button);
 
@@ -210,6 +402,7 @@
       });
     }
 
+    /* ===== Add New Item ===== */
     function addItem() {
       if (!isAdmin) return alert("Only admin can add items!");
       const name = document.getElementById('item-name').value;
@@ -221,7 +414,7 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         const newItem = { name, price, image: e.target.result };
-        itemsRef.push(newItem); // add item to Firebase
+        itemsRef.push(newItem);
       };
 
       if (imageInput.files[0]) {
@@ -236,36 +429,30 @@
       imageInput.value = '';
     }
 
-function toggleAdmin() {
-  const passwordInput = document.getElementById('admin-password');
-  const adminButton = document.querySelector('#admin-login button'); // the Enter Admin Mode button
-  const password = passwordInput.value;
+    /* ===== Admin Login Handling ===== */
+    function toggleAdmin() {
+      const passwordInput = document.getElementById('admin-password');
+      const adminButton = document.querySelector('#admin-login button');
+      const password = passwordInput.value;
 
-  if (password === '0825') {
-    isAdmin = true;
-    if (password === '0825') {
-        window.location.href = 'admin.html'; // redirect to the admin page
-}
+      if (password === '0825') {
+        isAdmin = true;
+        window.location.href = 'admin.html';
+      } else {
+        const originalColor = adminButton.style.backgroundColor;
+        const originalText = adminButton.textContent;
 
-  } else {
-    // Change button color to red and text to "Wrong password"
-    const originalColor = adminButton.style.backgroundColor;
-    const originalText = adminButton.textContent;
+        adminButton.style.backgroundColor = 'red';
+        adminButton.textContent = 'Wrong password';
 
-    adminButton.style.backgroundColor = 'red';
-    adminButton.textContent = 'Wrong password';
+        setTimeout(() => {
+          adminButton.style.backgroundColor = originalColor || 'gold';
+          adminButton.textContent = originalText;
+        }, 500);
+      }
+    }
 
-    // Reset after 0.5 seconds
-    setTimeout(() => {
-      adminButton.style.backgroundColor = originalColor || 'gold';
-      adminButton.textContent = originalText;
-    }, 500);
-  }
-}
-
-
-
-    // Snow animation
+    /* ===== Snow Animation ===== */
     function createSnowflake() {
       const snowflake = document.createElement('div');
       snowflake.className = 'snowflake';
@@ -276,18 +463,97 @@ function toggleAdmin() {
       snowflake.textContent = '❄';
       document.getElementById('snow').appendChild(snowflake);
 
-      setTimeout(() => {
-        snowflake.remove();
-      }, 10000);
+      setTimeout(() => snowflake.remove(), 10000);
     }
 
-function exitAdmin() {
-  isAdmin = false;
-  document.getElementById('admin-section').style.display = 'none';
-  document.getElementById('admin-login').style.display = 'block';
+    setInterval(createSnowflake, 200);
+
+    function exitAdmin() {
+      isAdmin = false;
+      document.getElementById('admin-section').style.display = 'none';
+      document.getElementById('admin-login').style.display = 'block';
+    }
+
+    /* ===== Lightbox Controls ===== */
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxClose = document.getElementById('lightbox-close');
+
+    lightboxClose.addEventListener('click', () => lightbox.style.display = 'none');
+
+    lightbox.addEventListener('click', e => {
+      if (e.target === lightbox) lightbox.style.display = 'none';
+    });
+
+    /* ===== Description Overlay Controls ===== */
+    document.getElementById("desc-close").addEventListener("click", () => {
+      document.getElementById("desc-overlay").style.display = "none";
+    });
+
+    window.addEventListener("click", (e) => {
+      const overlay = document.getElementById("desc-overlay");
+      if (e.target === overlay) overlay.style.display = "none";
+    });
+
+    function closeDescOverlay() {
+        document.getElementById('desc-overlay').style.display = 'none';
+    }
+
+  function openClaimModal() {
+    document.getElementById('claim-modal').style.display = 'flex';
+  }
+
+  function closeClaimModal() {
+    document.getElementById('claim-modal').style.display = 'none';
+  }
+
+  // Open claim modal
+function openClaimModal() {
+  const modal = document.getElementById('claim-modal');
+  modal.style.display = 'flex';
+
+  // Reset inputs and buttons
+  document.getElementById('claim-first-name').value = '';
+  document.getElementById('claim-last-name').value = '';
+  const checkbox = document.getElementById('claim-confirm');
+  checkbox.checked = false;
+
+  const claimBtn = document.getElementById('claim-confirm-btn');
+  claimBtn.disabled = true;
+  claimBtn.style.opacity = '0.5';
+
+  const cancelBtn = document.getElementById('claim-cancel-btn');
+
+  // Event: checkbox toggles Claim button
+  checkbox.onchange = () => {
+    claimBtn.disabled = !checkbox.checked;
+    claimBtn.style.opacity = checkbox.checked ? '1' : '0.5';
+  };
+
+  // Event: Cancel closes modal
+  cancelBtn.onclick = () => {
+    modal.style.display = 'none';
+  };
 }
 
-    setInterval(createSnowflake, 200);
+// Enable Claim button only if checkbox is checked
+document.addEventListener("DOMContentLoaded", () => {
+  const checkbox = document.getElementById('claim-confirm');
+  const claimBtn = document.getElementById('claim-confirm-btn');
+  const cancelBtn = document.getElementById('claim-cancel-btn');
+
+  // Update Claim button state when checkbox changes
+  checkbox.addEventListener('change', () => {
+    claimBtn.disabled = !checkbox.checked;
+    claimBtn.style.opacity = checkbox.checked ? '1' : '0.5';
+  });
+
+  // Cancel button closes modal
+  cancelBtn.addEventListener('click', () => {
+    document.getElementById('claim-modal').style.display = 'none';
+  });
+});
+
   </script>
 </body>
 </html>
