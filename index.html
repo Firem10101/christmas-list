@@ -243,6 +243,14 @@
     margin: 0;
   }
 
+  #claim-modal #claim-confirm-btn,
+  #claim-modal #claim-cancel-btn {
+    position: relative;
+    top: 1.3em; /* moves them visually down */
+    }
+
+
+
     </style>
   </head>
 <body>
@@ -311,7 +319,7 @@
     
     <label style="display:flex; align-items:center; margin-bottom:15px;">
       <input type="checkbox" id="claim-confirm" style="margin-right:10px;">
-      <span>"By selecting this checkbox, you acknowledge and agree to claim this gift for Brandon."</span>
+      <span>By selecting this checkbox, you acknowledge and agree to claim this gift for Brandon.</span>
     </label>
     
     <div style="display:flex; justify-content:flex-end; gap:10px; position:absolute; bottom:20px; right:20px; width:auto;">
@@ -349,7 +357,7 @@
     <!-- Instruction Box -->
     <div style="border:1px solid #ccc; border-radius:5px; padding:10px; background:#eef; text-align:center; margin:10px 0;">
       Please input the amount you would like to donate.
-      *Note: These donations are anonymous*
+      Note: These donations are anonymous
     </div>
     
     <!-- Input Box -->
@@ -358,7 +366,7 @@
     <!-- Checkbox -->
     <label style="display:flex; align-items:center; margin:10px 0; font-size:0.9rem;">
       <input type="checkbox" id="donate-confirm" style="margin-right:10px;">
-      <span>By checking this box, you agree to Donate the following amount towards this item.</span>
+      <span>By checking this box, you agree to donate the following amount towards this item.</span>
     </label>
     
     <!-- Buttons -->
@@ -521,7 +529,7 @@
   }
 
   #general-donate-btn {
-    font-size: 4rem !important;       /* same as claim button */
+    font-size: 1rem !important;       /* same as claim button */
     padding: 3% 5% !important;       /* same as claim button */
     width: 85% !important;           /* match claim buttons */
     max-width: 300px;     /* optional cap */
