@@ -94,6 +94,8 @@
     overflow-y: auto;
     box-shadow: -5px 0 10px rgba(0,0,0,0.5);
   }
+
+  
 </style>
 </head>
 <body>
@@ -129,6 +131,28 @@
   background-color:rgba(0,0,0,0.5); border-radius:15px; color:white;">
   <h3 style="margin-top:0;">Claimed Items</h3>
   <div id="claimed-items-container"></div>
+</div>
+
+<!-- Total Box (Bottom Left) -->
+<div id="admin-total-container" style="position: fixed; bottom: 20px; left: 20px; display: flex; align-items: center; gap: 10px;">
+  <div id="total-box" style="
+    background-color: rgba(255, 255, 255, 0.9); 
+    color: #000; 
+    padding: 10px 20px; 
+    border-radius: 10px; 
+    font-weight: bold; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3); 
+    min-width: 80px; 
+    text-align: center;
+  ">$0</div>
+  <button id="edit-total-btn" style="
+    padding: 8px 12px; 
+    border-radius: 5px; 
+    border: none; 
+    background-color: #facc15; 
+    font-weight: bold; 
+    cursor: pointer;
+  ">Edit</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app-compat.js"></script>
@@ -395,6 +419,49 @@ document.getElementById('reveal-claimed-btn').addEventListener('click', () => {
   claimedList.style.display = isVisible ? 'none' : 'block';
   document.getElementById('reveal-claimed-btn').textContent = isVisible ? 'Reveal Claimed Items' : 'Hide Claimed Items';
 });
+
+const totalRef = db.ref('totalDonations');
+const totalBox = document.getElementById('total-box');
+
+// Listen for changes from Firebase
+totalRef.on('value', snapshot => {
+    const total = snapshot.val() || 0;
+    const input = totalBox.querySelector('input');
+    if (!input) { // only update if not editing
+        totalBox.textContent = `$${parseFloat(total).toFixed(2)}`;
+    }
+});
+
+// Make totalBox editable inline
+totalBox.addEventListener('click', () => {
+    // If input already exists, do nothing
+    if (totalBox.querySelector('input')) return;
+
+    const currentTotal = totalBox.textContent.replace('$', '');
+    totalBox.innerHTML = `<input type="text" id="totalDonationsInput" value="${currentTotal}" style="width:70px; font-weight:bold;">`;
+    const input = document.getElementById('totalDonationsInput');
+    input.focus();
+    input.select();
+
+    // Only allow numbers and decimal
+    input.addEventListener('input', () => {
+        input.value = input.value.replace(/[^\d.]/g,'');
+    });
+
+    // Save on Enter or blur
+    const saveTotal = () => {
+        let val = parseFloat(input.value);
+        if (isNaN(val)) val = 0;
+        val = val.toFixed(2);
+        totalRef.set(parseFloat(val)); // update Firebase
+        totalBox.textContent = `$${val}`;
+    };
+
+    input.addEventListener('keydown', e => { if(e.key === 'Enter') saveTotal(); });
+    input.addEventListener('blur', saveTotal);
+});
+
+
 </script>
 </body>
 </html>

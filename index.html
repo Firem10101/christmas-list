@@ -46,6 +46,13 @@
     transition: transform 0.2s, background-color 0.2s;
   }
 
+  .item button {
+    margin-right: 1%;      /* Tiny space between buttons */
+    padding: 0.5% 2%;      /* Slightly smaller padding */
+    font-size: 1.5vw;      /* Smaller text */
+    flex: none;            /* Prevent buttons from stretching */
+    }
+
   .item:hover {
     transform: scale(1.03);
     background-color: rgba(0, 128, 0, 0.3);
@@ -79,13 +86,6 @@
     font-size: 2vw;
     transition: background-color 0.2s;
   }
-
-  .item button {
-  margin-right: 0.1%;    /* Tiny space between buttons */
-  padding: 0.8% 2%;    /* Slightly smaller than before */
-  font-size: 1.2vw;    /* Slightly smaller text */
-  flex: none;          /* Prevent stretching */
-}
 
   button:hover {
     background-color: #ffa500;
@@ -331,17 +331,65 @@
   </div>
 </div>
 
+<div style="width:50%; margin: -1.5% 0 2% 5%;">
+  <button id="general-donate-btn" style="width:auto; font-size:1.2vw; padding:0.5em 0.7em;">Donate Money Instead</button>
+</div>
+
 <!-- Donate Modal -->
 <div id="donate-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
     background: rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:10004;">
   <div style="background:#fff; color:#000; padding:20px; border-radius:10px; max-width:400px; width:90%; position:relative;">
-    <h2>Donate</h2>
-    <p>Thank you for considering a donation!</p>
-    <!-- Placeholder content -->
-    <div id="donate-content" style="margin:10px 0; padding:10px; background:#f8f8f8; border-radius:5px;">
-      <!-- You can add forms or info here later -->
+    
+    <!-- Title -->
+    <h2 style="text-align:center; margin-top:0;">Donate</h2>
+    
+    <!-- Item Info / Donation Purpose -->
+    <p id="donate-item-text" style="text-align:center; margin:5px 0; font-size:1rem;">Donate For: General Donation</p>
+    
+    <!-- Instruction Box -->
+    <div style="border:1px solid #ccc; border-radius:5px; padding:10px; background:#eef; text-align:center; margin:10px 0;">
+      Please input the amount you would like to donate.
     </div>
-    <button id="donate-close-btn" style="margin-top:10px; padding:5px 10px; font-size:0.9em;">Close</button>
+    
+    <!-- Input Box -->
+    <input type="number" id="donate-amount" placeholder="$0.00" style="width:90%; margin:10px auto; display:block; padding:10px; font-size:1rem; text-align:center; border-radius:5px; border:1px solid #ccc;">
+    
+    <!-- Checkbox -->
+    <label style="display:flex; align-items:center; margin:10px 0; font-size:0.9rem;">
+      <input type="checkbox" id="donate-confirm" style="margin-right:10px;">
+      <span>By checking this box, you agree to Donate the following amount towards this item.</span>
+    </label>
+    
+    <!-- Buttons -->
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+      <button id="donate-confirm-btn" disabled style="opacity:0.5; width:auto; padding:0.6em 1.2em; font-size:0.7rem; white-space:nowrap; box-sizing:border-box;">Donate</button>
+      <button id="donate-cancel-btn" style="width:auto; padding:0.6em 1.2em; font-size:0.7rem; white-space:nowrap; box-sizing:border-box;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="donation-total" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    z-index: 10005;
+">
+  Total Donated: $0.00
+</div>
+
+<!-- Donation Success Overlay -->
+<div id="donate-success-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background-color: rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:10006;">
+  <div style="background-color:#fff; padding:20px; border-radius:10px; max-width:400px; width:90%; text-align:center; position:relative;">
+    <h2 style="color:#000; font-size:36px; font-family: Arial, sans-serif;">Donation Successful!</h2>
+    <p id="donate-success-subtitle" style="color:#000; font-size:1.2rem; margin:10px 0;"></p>
+    <button id="donate-success-close" style="width:auto; padding:0.6em 1.2em; font-size:0.7rem; white-space:nowrap; box-sizing:border-box;">Close</button>
   </div>
 </div>
 
@@ -427,18 +475,14 @@
     white-space: nowrap;
   }
 
-  /* Stack Donate and Claim buttons vertically */
-  .item button {
-    width: 85%;
+  /* Buttons stacked below */
+  .item button,
+  .description-text {
     font-size: 4vw;
     padding: 3% 5%;
-    margin: 2% 0 0 0; /* small gap between stacked buttons */
+    width: 85%;
     border-radius: 10px;
     text-align: center;
-  }
-
-  .item button.description-text {
-    margin-top: 2%; /* keep description button slightly above the others */
   }
 
   .description-text {
@@ -498,6 +542,9 @@
   const db = firebase.database();
   const itemsRef = db.ref('items');
   const claimedRef = db.ref('claimedItems');
+  const totalRef = db.ref('totalDonations');
+  const donationTotalDiv = document.getElementById('donation-total');
+  const totalBox = document.getElementById('total-box');
 
   /* ===== Realtime Firebase Sync ===== */
   itemsRef.on('value', snapshot => {
@@ -549,12 +596,6 @@
       descBtn.textContent = 'description';
       descBtn.onclick = () => showDescription(item);
       itemDiv.appendChild(descBtn);
-
-      // Donate Button
-        const donateBtn = document.createElement('button');
-        donateBtn.textContent = 'Donate';
-        donateBtn.onclick = () => openDonateModal(item);
-        itemDiv.appendChild(donateBtn);
 
       // Claim Button
       const claimBtn = document.createElement('button');
@@ -747,27 +788,76 @@ document.getElementById('claim-success-close').addEventListener('click', () => {
     document.getElementById('claim-success-overlay').style.display = 'none';
 });
 
-  //Close button for donate overlay
-
-function openDonateModal(item) {
+// Open general donation modal
+document.getElementById('general-donate-btn').addEventListener('click', () => {
   const modal = document.getElementById('donate-modal');
   modal.style.display = 'flex';
 
-  // You can customize this content if needed
-  document.getElementById('donate-content').innerHTML = `<p>Donate for: <strong>${item.name}</strong></p>`;
+  const amountInput = document.getElementById('donate-amount');
+  amountInput.value = '';
 
-  // Close button
-  document.getElementById('donate-close-btn').onclick = () => {
-    modal.style.display = 'none';
+  const checkbox = document.getElementById('donate-confirm');
+  checkbox.checked = false;
+
+  const donateBtn = document.getElementById('donate-confirm-btn');
+  donateBtn.disabled = true;
+  donateBtn.style.opacity = '0.5';
+
+  // Enable Donate button only when checkbox is checked
+  checkbox.onchange = () => {
+    donateBtn.disabled = !checkbox.checked;
+    donateBtn.style.opacity = checkbox.checked ? '1' : '0.5';
   };
-}
 
-// Close modal if clicked outside
-window.addEventListener('click', e => {
-  const modal = document.getElementById('donate-modal');
-  if (e.target === modal) modal.style.display = 'none';
+  donateBtn.onclick = () => {
+    const amount = parseFloat(amountInput.value);
+    if (isNaN(amount) || amount <= 0) return alert("Please enter a valid donation amount.");
+
+    // Update Firebase total atomically
+    totalRef.transaction(currentTotal => (currentTotal || 0) + amount);
+
+    // Log individual donation
+    db.ref('donations').push({ amount, timestamp: Date.now() });
+
+    // Show donation success overlay
+    const donateOverlay = document.getElementById('donate-success-overlay');
+    const donateSubtitle = document.getElementById('donate-success-subtitle');
+    donateSubtitle.textContent = `Thank you for donating $${amount.toFixed(2)}!`;
+    donateOverlay.style.display = 'flex';
+
+    document.getElementById('donate-success-close').onclick = () => {
+        donateOverlay.style.display = 'none';
+    };
+
+    // Close the donate modal
+    modal.style.display = 'none';
+};
+
+  // Cancel button
+  document.getElementById('donate-cancel-btn').onclick = () => modal.style.display = 'none';
 });
 
+
+// listen for updates from Firebase
+totalRef.on('value', snapshot => {
+    const total = snapshot.val() || 0;
+    donationTotalDiv.textContent = `Total Donated: $${parseFloat(total).toFixed(2)}`;
+});
+
+// when a donation is made
+document.getElementById('donate-confirm-btn').onclick = () => {
+    const amount = parseFloat(document.getElementById('donate-amount').value);
+    if (isNaN(amount) || amount <= 0) return alert("Please enter a valid donation amount.");
+
+    // update total in Firebase atomically
+    totalRef.transaction(currentTotal => (currentTotal || 0) + amount);
+
+    // optionally log individual donation
+    db.ref('donations').push({ amount, timestamp: Date.now() });
+
+    alert(`Thank you for donating $${amount.toFixed(2)}!`);
+    document.getElementById('donate-modal').style.display = 'none';
+};
 
 </script>
 </body>
