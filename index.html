@@ -274,98 +274,10 @@
     width: 95%;
   }
 }
-/*
-  #claim-modal > div {
-    width: 90vw !important;
-    max-width: none !important;
-    padding: 6vw !important;
-    font-size: 4vw !important;
-    border-radius: 4vw !important;
-    position: relative !important;
-  }
 
-  #claim-modal h2 {
-    font-size: 5vw !important;
-    margin-bottom: 3vw !important;
-  }
 
-  #claim-modal p {
-    font-size: 4vw !important;
-    margin-bottom: 4vw !important;
-  }
-
-  #claim-modal input[type="text"] {
-    width: 100% !important;
-    font-size: 4vw !important;
-    padding: 3vw !important;
-    margin-bottom: 3vw !important;
-    border-radius: 2vw !important;
-    border: 0.4vw solid #ccc !important;
-  }
-
-  #claim-modal label {
-    display: flex !important;
-    align-items: center !important;
-    font-size: 3.5vw !important;
-    line-height: 1.2;
-    margin-bottom: 6vw !important;
-  }
-
-  #claim-modal input[type="checkbox"] {
-    transform: scale(2) !important;
-    margin-right: 2vw !important;
-  }
-
-  #claim-modal div[style*="justify-content:flex-end"] {
-    position: static !important; /* remove that absolute bottom positioning */
-/*
-    justify-content: center !important;
-    gap: 4vw !important;
-    width: 100% !important;
-  }
-
-  #claim-modal button {
-    font-size: 4vw !important;
-    padding: 3vw 5vw !important;
-    border-radius: 2vw !important;
-  }
-
-}
-*/
-/*
-button {
-    padding: 1% 3%;
-    background-color: gold;
-    border: none;
-    border-radius: 0.7vw;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 2vw;
-    transition: background-color 0.2s;
-  }
-
-  button:hover {
-    background-color: #ffa500;
-  }
-
-  input {
-    padding: 1%;
-    margin: 1%;
-    border-radius: 0.5vw;
-    border: 0.1vw solid #ccc;
-    font-size: 1vw;
-  }
-
-  h2 {
-    margin-top: 5vh;
-    font-size: 2vw;
-  }
-*/
-
-</style>
-
-</head>
-
+    </style>
+  </head>
 <body>
   <div id="snow"></div>
 
@@ -448,6 +360,31 @@ button {
   </div>
 </div>
 
+<div id="list-container" style="position:relative; min-height:200px;">
+  <div id="loading-screen" 
+    style="display:flex; align-items:center; justify-content:center; height:100%; position:absolute; inset:0; z-index:1;">
+    <div class="loader"></div>
+  </div>
+</div>
+
+
+
+<style>
+.loader {
+  border: 6px solid #f3f3f3;       /* Light grey */
+  border-top: 6px solid #3498db;   /* Blue */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+</style>
 <script>
   let currentItemKey = null; // Tracks which item is being claimed
   let isAdmin = false;
@@ -471,11 +408,16 @@ button {
 
   /* ===== Realtime Firebase Sync ===== */
   itemsRef.on('value', snapshot => {
-    const data = snapshot.val();
-    const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
-    items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    renderList(items);
-  });
+  const data = snapshot.val();
+  const items = data ? Object.entries(data).map(([key, value]) => ({ key, ...value })) : [];
+  items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  renderList(items);
+
+  // Hide loading screen after items are rendered
+  const loader = document.getElementById('loading-screen');
+  if (loader) loader.style.display = 'none';
+});
+
 
   claimedRef.on('value', snapshot => {
     const data = snapshot.val();
@@ -705,6 +647,8 @@ button {
 document.getElementById('claim-success-close').addEventListener('click', () => {
     document.getElementById('claim-success-overlay').style.display = 'none';
 });
+
+
 
 </script>
 </body>
