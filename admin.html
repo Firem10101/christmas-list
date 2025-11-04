@@ -292,9 +292,13 @@ function addItem() {
   if (!name || !price) return alert('Please enter name and price');
 
   const pushItem = image => {
-    const newItem = { name, price, image, link, order: Date.now() };
-    itemsRef.push(newItem);
-  };
+  const description = document.getElementById('item-description').value || '';
+  const newItem = { name, price, image, link, description, order: Date.now() };
+  itemsRef.push(newItem);
+};
+
+    document.getElementById('item-description').value = '';
+
 
   if (imageInput.files[0]) {
     const reader = new FileReader();
