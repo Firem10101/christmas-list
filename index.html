@@ -521,12 +521,13 @@
   }
 
   #general-donate-btn {
-    position: absolute;     /* stay relative to #list */
-    bottom: 10%;
-    left: 10%;
-    font-size: 1.7rem;         /* bigger text */
-    padding: 3% 5%;         /* larger touch area */
-    width: auto;            /* keep natural width */
+    position: static;      /* stay in flow at bottom of list */
+    margin-top: 3%;        /* some spacing from last item */
+    font-size: 4vw;        /* same as claim button */
+    padding: 3% 5%;        /* same touch area as claim button */
+    width: 85%;            /* match item buttons */
+    border-radius: 10px;
+    text-align: center;
     display: block;
   }
 
