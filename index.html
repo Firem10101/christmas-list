@@ -359,23 +359,27 @@
     font-size: 0.9rem;
   }
 
+  /* Keep list container visible and styled */
   #list {
     width: 90%;
     margin: 5% auto;
-    padding: 0;
+    padding: 4%;
+    background: rgba(0, 0, 0, 0.6); /* restores opaque black background */
+    border-radius: 15px;
   }
 
   .item {
     display: flex;
-    flex-direction: column; /* stack main sections vertically */
+    flex-direction: column; /* stack for mobile */
     align-items: center;
     justify-content: center;
     gap: 3vw;
-    padding: 4%;
+    padding: 5%;
+    background: rgba(255, 255, 255, 0.05); /* subtle background behind each item */
     border-radius: 12px;
+    margin-bottom: 4%;
   }
 
-  /* Top section: image + name/cost side by side */
   .item-top {
     display: flex;
     flex-direction: row;
@@ -395,9 +399,9 @@
     flex: 1;
     font-size: 4vw;
     white-space: nowrap;
+    color: white;
   }
 
-  /* Buttons stacked below */
   .item button,
   .description-text {
     font-size: 4vw;
@@ -431,7 +435,13 @@
     justify-content: center;
     align-items: center;
   }
+
+  /* Hide admin panel on mobile */
+  #admin-password-panel {
+    display: none !important;
+  }
 }
+
 
 </style>
 
