@@ -321,8 +321,6 @@
   <div style="background-color:rgb(255, 255, 255); padding:20px; border-radius:10px; max-width:400px; width:90%; text-align:center; position:relative;">
     <h2 style="color: rgb(0, 0, 0); font-size: 36px; font-family: Arial, sans-serif;">Claim Successful!</h2>
     <button id="claim-success-close"style="width:auto; padding:0.6em 1.2em; font-size:0.7rem; white-space:nowrap; box-sizing:border-box;">Close</button>
-
-
   </div>
 </div>
 
@@ -358,7 +356,7 @@
 /* ===== Improved Mobile Scaling ===== */
 @media (max-width: 768px) {
   body {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 
   #list {
@@ -369,40 +367,52 @@
 
   .item {
     display: flex;
-    flex-direction: row; /* keep row layout */
+    flex-direction: column; /* stack main sections vertically */
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem; /* space between image, text, and buttons */
-    padding: 3%;
-    flex-wrap: nowrap; /* prevent wrapping */
+    justify-content: center;
+    gap: 3vw;
+    padding: 4%;
+    border-radius: 12px;
   }
 
-  .item img {
-    width: 25%;
-    max-width: 120px;
+  /* Top section: image + name/cost side by side */
+  .item-top {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    gap: 4%;
+  }
+
+  .item-top img {
+    width: 28%;
+    max-width: 140px;
     height: auto;
-    flex-shrink: 0;
   }
 
-  .item div {
+  .item-top div {
     flex: 1;
-    font-size: 3.5vw;
+    font-size: 4vw;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; /* prevent text from spilling onto new lines */
   }
 
+  /* Buttons stacked below */
   .item button,
   .description-text {
-    font-size: 3.5vw;
-    padding: 2% 3%;
-    border-radius: 8px;
-    flex-shrink: 0; /* keep buttons small and in line */
-    width: auto; /* prevents full-width stretch */
+    font-size: 4vw;
+    padding: 3% 5%;
+    width: 85%;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .description-text {
+    margin-top: 2%;
   }
 
   input {
-    font-size: 4vw;
+    font-size: 4.5vw;
     width: 95%;
   }
 
