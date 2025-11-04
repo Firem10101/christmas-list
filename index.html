@@ -508,6 +508,24 @@
     max-width: 350px;
   }
 
+  /* Fix checkbox text alignment on mobile */
+    #claim-modal label {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    white-space: normal;     /* allow wrapping */
+    word-wrap: break-word;   /* ensure text wraps properly */
+    line-height: 1.3;
+    }
+
+    #claim-modal label span {
+    flex: 1;                 /* makes the text take remaining space */
+    font-size: 4vw;          /* scale for readability on mobile */
+    }
+
   #loading-screen {
     display: flex;
     position: fixed;
@@ -529,7 +547,7 @@
   }
 
   #general-donate-btn {
-    font-size: 4vw !important;       /* same as claim button */
+    font-size: 3vw !important;       /* same as claim button */
     padding: 3% 5% !important;       /* same as claim button */
     width: 85% !important;           /* match claim buttons */
     border-radius: 10px !important;
