@@ -393,6 +393,53 @@
 /* ===== Improved Mobile Scaling ===== */
 @media (max-width: 768px) {
   body {
+    font-size: 3.5vw;
+  }
+
+  #list {
+    width: 95%;
+    margin: 2.5%;
+    padding: 2%;
+  }
+
+  .item {
+    flex-direction: row; /* keep items in a row */
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap; /* allow wrapping if screen is too narrow */
+    padding: 2%;
+  }
+
+  .item img {
+    width: 30%; /* scale image relative to item width */
+    max-width: 150px;
+    height: auto;
+    margin-right: 2%;
+  }
+
+  .item div {
+    flex: 1; /* text takes remaining space */
+    font-size: 3.5vw;
+  }
+
+  .item button, .description-text {
+    font-size: 3.5vw;
+    padding: 1% 2%;
+    margin-left: 1%;
+    white-space: nowrap;
+  }
+
+  input {
+    font-size: 4vw;
+    width: 95%;
+  }
+
+  #claim-modal div {
+    width: 90%;
+    max-width: 350px;
+  }
+}@media (max-width: 768px) {
+  body {
     font-size: 4vw;
   }
 
