@@ -365,16 +365,11 @@
 </div>
 
 <style>
-/* ===== Loader Inside List ===== */
-#list {
-  position: relative;
-  min-height: 50%;
-}
-
+/* ===== Loader (Hidden by Default) ===== */
 #loading-screen {
+  display: none;
   position: absolute;
   inset: 0;
-  display: flex;
   justify-content: center;
   align-items: center;
   background: rgba(0,0,0,0.4);
@@ -395,7 +390,7 @@
   100% { transform: rotate(360deg); }
 }
 
-/* ===== Mobile-Friendly Scaling ===== */
+/* ===== Improved Mobile Scaling ===== */
 @media (max-width: 768px) {
   body {
     font-size: 4vw;
@@ -441,9 +436,8 @@
     max-width: 350px;
   }
 }
-
-
 </style>
+
 <script>
   let currentItemKey = null; // Tracks which item is being claimed
   let isAdmin = false;
