@@ -555,32 +555,28 @@
   }
 
   /* Donation modal inputs and buttons bigger for mobile */
-  .checkbox-container {
+    .checkbox-container {
     display: flex;
     align-items: center;
     justify-content: flex-start;
     gap: 8px;
     width: 100%;
     text-align: left;
-    white-space: normal;
+    flex-wrap: wrap; /* allow text to wrap nicely on small screens */
   }
 
   .checkbox-container input[type="checkbox"] {
-    width: auto;
+    flex: 0 0 auto; /* prevent checkbox from stretching */
+    width: 20px;    /* standard checkbox size */
+    height: 20px;
     margin: 0;
   }
 
   .checkbox-container label {
-    flex: 1;
-    word-wrap: break-word;
-    text-align: left;
-  }
-
-  /* Optional: make modals scale properly on mobile */
-  .modal {
-    width: 90%;
-    left: 50%;
-    transform: translateX(-50%);
+    flex: 1; /* take remaining space */
+    white-space: normal; /* allow wrapping */
+    word-break: break-word;
+    line-height: 1.4;
   }
 }
 
