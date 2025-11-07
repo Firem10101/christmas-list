@@ -312,28 +312,27 @@ function addItem() {
   const price = document.getElementById('item-price').value;
   const link = document.getElementById('item-link').value;
   const imageInput = document.getElementById('item-image');
+  const description = document.getElementById('item-description').value || '';
 
   if (!name || !price) return alert('Please enter name and price');
 
   const pushItem = image => {
-  const description = document.getElementById('item-description').value || '';
-  const newItem = { name, price, image, link, description, order: Date.now() };
-  itemsRef.push(newItem);
-};
+    const newItem = { name, price, image, link, description, order: Date.now() };
+    itemsRef.push(newItem);
 
+    // ✅ Clear inputs *after* adding item
+    document.getElementById('item-name').value = '';
+    document.getElementById('item-price').value = '';
+    document.getElementById('item-link').value = '';
     document.getElementById('item-description').value = '';
-
+    imageInput.value = '';
+  };
 
   if (imageInput.files[0]) {
     const reader = new FileReader();
     reader.onload = e => pushItem(e.target.result);
     reader.readAsDataURL(imageInput.files[0]);
   } else pushItem('');
-
-  document.getElementById('item-name').value = '';
-  document.getElementById('item-price').value = '';
-  document.getElementById('item-link').value = '';
-  imageInput.value = '';
 }
 
 // EDIT ITEM
