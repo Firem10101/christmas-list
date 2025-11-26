@@ -313,13 +313,20 @@
   <div style="background:#fff; color:#000; padding:20px; border-radius:10px; max-width:350px; width:90%; position:relative;">
     <h2>Claim Item</h2>
     <p>Please enter your information:</p>
+
+    <div style="border:1px solid #ccc; border-radius:5px; padding:10px; background:#eef; text-align:center; margin:10px 0;">
+      Please Note: By claiming an item, it will remove the item from the list and you will no longer be able to view it. Please make sure you save the link or details before claiming.
+    </div>
     
     <input type="text" id="claim-first-name" placeholder="First Name" style="width:95%; margin-bottom:10px; padding:5px;"><br>
     <input type="text" id="claim-last-name" placeholder="Last Name" style="width:95%; margin-bottom:10px; padding:5px;"><br>
     
     <label style="display:flex; align-items:center; margin-bottom:15px;">
       <input type="checkbox" id="claim-confirm" style="margin-right:10px;">
-      <span>By selecting this checkbox, you acknowledge and agree to claim this gift for Brandon.</span>
+      <span>
+        Checking this box means you’re reserving this gift for Brandon so others won’t purchase the same item.
+        Note: this will not buy or order the item. It only marks it as claimed.
+      </span>
     </label>
     
     <div style="display:flex; justify-content:flex-end; gap:10px; position:absolute; bottom:20px; right:20px; width:auto;">
@@ -356,8 +363,8 @@
     
     <!-- Instruction Box -->
     <div style="border:1px solid #ccc; border-radius:5px; padding:10px; background:#eef; text-align:center; margin:10px 0;">
-      Please input the amount you would like to donate.
-      Note: These donations are anonymous
+      This option is for anyone who doesn’t want to claim a gift item, but would still like to contribute a little something.
+      Note: These donations are anonymous.
     </div>
     
     <!-- Input Box -->
@@ -366,7 +373,7 @@
     <!-- Checkbox -->
     <label style="display:flex; align-items:center; margin:10px 0; font-size:0.9rem;">
       <input type="checkbox" id="donate-confirm" style="margin-right:10px;">
-      <span>By checking this box, you agree to donate the following amount towards this item.</span>
+      <span>Checking this box just notes your intention to give this amount as a future gift. Nothing is charged or sent at this time.</span>
     </label>
     
     <!-- Buttons -->
@@ -918,7 +925,7 @@ document.getElementById('general-donate-btn').addEventListener('click', () => {
     // Show donation success overlay
     const donateOverlay = document.getElementById('donate-success-overlay');
     const donateSubtitle = document.getElementById('donate-success-subtitle');
-    donateSubtitle.textContent = `Thank you for donating $${amount.toFixed(2)}!`;
+    donateSubtitle.textContent = `Thank you so much for donating $${amount.toFixed(2)}!`;
     donateOverlay.style.display = 'flex';
 
     document.getElementById('donate-success-close').onclick = () => {
